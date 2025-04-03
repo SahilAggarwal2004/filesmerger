@@ -1,0 +1,60 @@
+{
+  "short_name": "FilesMerger",
+  "name": "FilesMerger - Merge Files Effortlessly!",
+  "version": "1.0.0",
+  "id": "1.0.0",
+  "manifest_version": 2,
+  "description": "FilesMerger helps you quickly and easily merge multiple files into a single document.",
+  "author": "Sahil Aggarwal",
+  "icons": [
+    {
+      "src": "icons/manifest-icon-192.maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/manifest-icon-192.maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/manifest-icon-512.maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/manifest-icon-512.maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "start_url": "/",
+  "shortcuts": [
+    {
+      "name": "Merge Images",
+      "url": "/image-merger"
+    }
+  ],
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff",
+  "dir": "auto",
+  "scope": "/",
+  "lang": "en",
+  "prefer_related_applications": false,
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
+  "display_override": [
+    "standalone",
+    "window-controls-overlay"
+  ],
+  "edge_side_panel": {
+    "preferred_width": 500
+  }
+}

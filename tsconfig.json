@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -13,10 +12,13 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "erasableSyntaxOnly": true,
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "target": "ES2017",
+    "types": ["serviceworker", "@serwist/next/typings"]
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "next.config.mjs"],
   "exclude": ["node_modules"]
 }

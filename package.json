@@ -1,6 +1,6 @@
 {
   "name": "filesmerge",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -9,19 +9,23 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "next": "15.2.4",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "next": "15.2.4"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@builder.io/partytown": "^0.10.3",
+    "@eslint/eslintrc": "^3",
+    "@serwist/next": "^9.0.12",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
+    "@types/serviceworker": "^0.0.127",
     "eslint": "^9",
     "eslint-config-next": "15.2.4",
-    "@eslint/eslintrc": "^3"
+    "serwist": "^9.0.12",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }
