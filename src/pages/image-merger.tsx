@@ -1,21 +1,25 @@
+/* eslint-disable no-var */
 /* eslint-disable @next/next/no-img-element */
 // pages/image-merger.tsx
 import { useState, useRef, useEffect, useMemo } from "react";
 import Head from "next/head";
-import { ImageFormat, LoadedImage, MergedImage, MergeDirection } from "@/types";
-import { download, formatFileSize } from "@/modules/utils";
-import { imageFormatDescriptions, imageFormats } from "@/constants";
+import { ImageFormat, LoadedImage, MergedImage, MergeDirection, DimensionStrategy } from "@/types";
+import { download, formatFileSize, minmax, sum } from "@/modules/utils";
+import { imageFormatDescriptions, imageFormats, mergeDirections, dimensionStrategies, dimensionStrategyDescriptions } from "@/constants";
 import { loadImages } from "@/modules/image";
 
 export default function ImageMerger() {
   const [loadedImages, setLoadedImages] = useState<LoadedImage[]>([]);
   const [mergedImage, setMergedImage] = useState<MergedImage>(null);
   const [mergeDirection, setMergeDirection] = useState<MergeDirection>("vertical");
+  const [dimensionStrategy, setDimensionStrategy] = useState<DimensionStrategy>("minimum");
   const [outputFormat, setOutputFormat] = useState<ImageFormat>("jpeg");
   const [quality, setQuality] = useState(0.8);
+  const [backgroundColor, setBackgroundColor] = useState("#ffffff");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const totalSize = useMemo(() => loadedImages.reduce((acc, img) => acc + img.size, 0), [loadedImages]);
+  const isOriginal = dimensionStrategy === "original";
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const { files } = event.target;
@@ -29,18 +33,19 @@ export default function ImageMerger() {
     if (loadedImages.length < 2) return alert("Please select at least 2 images to merge.");
 
     const isHorizontal = mergeDirection === "horizontal";
-    let canvasWidth = 0;
-    let canvasHeight = 0;
+    const isMinimum = dimensionStrategy === "minimum";
 
-    loadedImages.forEach(({ element: { width, height } }) => {
-      if (isHorizontal) {
-        canvasWidth += width;
-        canvasHeight = Math.max(canvasHeight, height);
-      } else {
-        canvasHeight += height;
-        canvasWidth = Math.max(canvasWidth, width);
-      }
-    });
+    if (isHorizontal) {
+      var canvasHeight = isMinimum ? Infinity : 0;
+      loadedImages.forEach(({ element: { height } }) => (canvasHeight = minmax(canvasHeight, height, isMinimum)));
+      var widths = loadedImages.map(({ element: { width, height } }) => (isOriginal ? width : (width * canvasHeight) / height));
+      var canvasWidth = sum(widths);
+    } else {
+      canvasWidth = isMinimum ? Infinity : 0;
+      loadedImages.forEach(({ element: { width } }) => (canvasWidth = minmax(canvasWidth, width, isMinimum)));
+      var heights = loadedImages.map(({ element: { width, height } }) => (isOriginal ? height : (height * canvasWidth) / width));
+      canvasHeight = sum(heights);
+    }
 
     const canvas = document.createElement("canvas");
     canvas.width = canvasWidth;
@@ -48,13 +53,26 @@ export default function ImageMerger() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return alert("Unable to create canvas context. Please try a different browser.");
 
-    let xOffset = 0;
-    let yOffset = 0;
-    loadedImages.forEach(({ element }) => {
-      ctx.drawImage(element, xOffset, yOffset);
-      if (isHorizontal) xOffset += element.width;
-      else yOffset += element.height;
-    });
+    if (isOriginal) {
+      ctx.fillStyle = backgroundColor;
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+    }
+
+    if (isHorizontal) {
+      let offset = 0;
+      loadedImages.forEach(({ element }, index) => {
+        if (isOriginal) ctx.drawImage(element, offset, (canvasHeight - element.height) / 2, widths[index], element.height);
+        else ctx.drawImage(element, offset, 0, widths[index], canvasHeight);
+        offset += widths[index];
+      });
+    } else {
+      let offset = 0;
+      loadedImages.forEach(({ element }, index) => {
+        if (isOriginal) ctx.drawImage(element, (canvasWidth - element.width) / 2, offset, element.width, heights[index]);
+        else ctx.drawImage(element, 0, offset, canvasWidth, heights[index]);
+        offset += heights[index];
+      });
+    }
 
     canvas.toBlob(
       (blob) => {
@@ -122,31 +140,47 @@ export default function ImageMerger() {
                 {totalSize > 0 && <p className="text-sm text-slate-500 dark:text-slate-400">Total size: {formatFileSize(totalSize)}</p>}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Merge Direction</label>
                     <div className="flex space-x-4">
-                      <label className="flex items-center">
-                        <input
-                          type="radio"
-                          className="form-radio text-blue-600 focus:ring-blue-500"
-                          value="vertical"
-                          checked={mergeDirection === "vertical"}
-                          onChange={() => setMergeDirection("vertical")}
-                        />
-                        <span className="ml-2 text-slate-700 dark:text-slate-300">Vertical</span>
-                      </label>
-                      <label className="flex items-center">
-                        <input
-                          type="radio"
-                          className="form-radio text-blue-600 focus:ring-blue-500"
-                          value="horizontal"
-                          checked={mergeDirection === "horizontal"}
-                          onChange={() => setMergeDirection("horizontal")}
-                        />
-                        <span className="ml-2 text-slate-700 dark:text-slate-300">Horizontal</span>
-                      </label>
+                      {mergeDirections.map((direction) => (
+                        <label key={direction} className="flex items-center">
+                          <input
+                            type="radio"
+                            className="form-radio text-blue-600 focus:ring-blue-500"
+                            value={direction}
+                            checked={mergeDirection === direction}
+                            onChange={() => setMergeDirection(direction)}
+                          />
+                          <span className="ml-2 text-slate-700 dark:text-slate-300 capitalize">{direction}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Dimension Handling</label>
+                    <div className="space-y-2">
+                      {dimensionStrategies.map((strategy) => (
+                        <label key={strategy} className="flex items-center">
+                          <input
+                            type="radio"
+                            className="form-radio text-blue-600 focus:ring-blue-500"
+                            value={strategy}
+                            checked={dimensionStrategy === strategy}
+                            onChange={() => setDimensionStrategy(strategy)}
+                          />
+                          <span className="ml-2 text-slate-700 dark:text-slate-300">{dimensionStrategyDescriptions[strategy]}</span>
+                        </label>
+                      ))}
+
+                      {isOriginal && (
+                        <div className="ml-6 mt-2 flex space-x-3 items-center">
+                          <label className="block text-sm text-slate-600 dark:text-slate-400">Background Color</label>
+                          <input type="color" value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} className="h-7 w-12 p-0 rounded" />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

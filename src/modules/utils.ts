@@ -18,3 +18,7 @@ export function formatFileSize(bytes: number) {
   const unit = bytesToUnit(bytes);
   return `${bytes && bytesToSize(bytes, unit).toFixed(2)} ${unit}`;
 }
+
+export const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
+
+export const minmax = (a: number, b: number, useMin: boolean) => (useMin ? Math.min(a, b) : Math.max(a, b));
