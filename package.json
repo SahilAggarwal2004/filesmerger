@@ -9,22 +9,22 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "15.2.4",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "next": "15.3.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
     "@builder.io/partytown": "^0.10.3",
     "@eslint/eslintrc": "^3",
-    "@serwist/next": "^9.0.12",
+    "@serwist/next": "^9.0.14",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/serviceworker": "^0.0.127",
+    "@types/serviceworker": "^0.0.132",
     "eslint": "^9",
-    "eslint-config-next": "15.2.4",
-    "serwist": "^9.0.12",
+    "eslint-config-next": "15.3.1",
+    "serwist": "^9.0.14",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
