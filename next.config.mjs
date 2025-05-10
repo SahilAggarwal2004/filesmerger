@@ -2,7 +2,7 @@ import fs from "fs"
 import withSerwistInit from "@serwist/next";
 import packageJSON from "./package.json" with { type: "json" };
 
-const pages = ["/", "/image-merger"];
+const pages = ["/", "/image", "/pdf"];
 const revision = Date.now().toString();
 
 const withPWA = withSerwistInit({

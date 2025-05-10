@@ -14,6 +14,15 @@ The **Image Merger** tool allows you to combine multiple image files into one. W
 - **Choose output format**: JPEG, PNG, etc.
 - **Set image quality** and **background color**
 
+### PDF Merger
+
+The **PDF Merger** tool enables you to merge multiple PDF files into a single document. You can select specific page ranges for each file, reorder them as needed, and choose between a simple or advanced merging mode for greater control over the final output.
+
+- **Merge multiple PDFs** into one document
+- **Choose pages to include** using range selectors (e.g., `1-3, 5`)
+- **Simple and advanced modes** for flexible merging workflows
+- **Drag and drop to reorder PDFs** in advanced mode
+
 ### More Tools Coming Soon!
 
 FilesMerger is continuously evolving, and more file merging capabilities are being added to make it the go-to tool for effortlessly combining different types of files.

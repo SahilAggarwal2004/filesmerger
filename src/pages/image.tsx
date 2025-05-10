@@ -1,10 +1,10 @@
 /* eslint-disable no-var */
 /* eslint-disable @next/next/no-img-element */
-// pages/image-merger.tsx
-import { useState, useRef, useEffect, useMemo } from "react";
 import Head from "next/head";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { BsImages } from "react-icons/bs";
 import { ImageFormat, LoadedImage, MergedImage, MergeDirection, DimensionStrategy } from "@/types";
-import { download, formatFileSize, minmax, sum } from "@/modules/utils";
+import { calcSize, download, formatFileSize, minmax, sum } from "@/modules/utils";
 import { imageFormatDescriptions, imageFormats, mergeDirections, dimensionStrategies, dimensionStrategyDescriptions } from "@/constants";
 import { loadImages } from "@/modules/image";
 
@@ -18,7 +18,7 @@ export default function ImageMerger() {
   const [backgroundColor, setBackgroundColor] = useState("#ffffff");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const totalSize = useMemo(() => loadedImages.reduce((acc, img) => acc + img.size, 0), [loadedImages]);
+  const totalSize = useMemo(() => calcSize(loadedImages), [loadedImages]);
   const isOriginal = dimensionStrategy === "original";
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -30,8 +30,7 @@ export default function ImageMerger() {
   }
 
   function mergeImages() {
-    if (loadedImages.length < 2) return alert("Please select at least 2 images to merge.");
-
+    const canvas = document.createElement("canvas");
     const isHorizontal = mergeDirection === "horizontal";
     const isMinimum = dimensionStrategy === "minimum";
 
@@ -47,7 +46,6 @@ export default function ImageMerger() {
       canvasHeight = sum(heights);
     }
 
-    const canvas = document.createElement("canvas");
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
     const ctx = canvas.getContext("2d");
@@ -115,20 +113,7 @@ export default function ImageMerger() {
                 <div className="flex items-center justify-center w-full">
                   <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-slate-50 dark:bg-slate-700/30 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <svg
-                        className="w-8 h-8 text-slate-500 dark:text-slate-400 mb-3"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
-                        />
-                      </svg>
+                      <BsImages className="w-8 h-8 text-slate-500 dark:text-slate-400 mb-3 scale-90" />
                       <p className="mb-2 text-sm text-slate-500 dark:text-slate-400">
                         <span className="font-semibold">Click to upload</span> or drag and drop
                       </p>
@@ -245,7 +230,7 @@ export default function ImageMerger() {
 
               <div className="flex flex-wrap gap-3">
                 <button
-                  disabled={loadedImages.length < 2}
+                  disabled={!loadedImages.length}
                   onClick={mergeImages}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white rounded-lg shadow-sm transition-colors disabled:cursor-not-allowed"
                 >
@@ -253,7 +238,7 @@ export default function ImageMerger() {
                 </button>
                 <button
                   disabled={!mergedImage}
-                  onClick={() => download(mergedImage!.url, `merged-image.${outputFormat}`)}
+                  onClick={() => download(mergedImage!.url, `merged.${outputFormat}`)}
                   className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white rounded-lg shadow-sm transition-colors disabled:cursor-not-allowed"
                 >
                   Download Result
