@@ -98,8 +98,8 @@ export default function PdfMerger() {
                         {pdfFiles.map(({ id, file }) => (
                           <div key={id} className="flex gap-2 items-center px-3 py-2 border rounded-xl shadow-sm text-sm w-full">
                             <ReorderIcon />
-                            <span className="max-w-1/3 min-w-max p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white">
-                              {file.name}
+                            <span className="inline-block min-w-1/3 max-w-1/2 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white overflow-hidden">
+                              <span className="block whitespace-nowrap overflow-hidden text-ellipsis">{file.name}</span>
                             </span>
                             <input
                               type="text"
