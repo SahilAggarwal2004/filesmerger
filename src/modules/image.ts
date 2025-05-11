@@ -1,4 +1,5 @@
 import { LoadedImage } from "@/types";
+import { generateId } from "./utils";
 
 const loadImage = (file: File) => {
   if (!file.type.match("image.*")) return Promise.resolve(null);
@@ -7,7 +8,7 @@ const loadImage = (file: File) => {
     reader.onload = (e) => {
       const img = new Image();
       img.src = e.target?.result as string;
-      img.onload = () => resolve({ element: img, size: file.size, type: file.type, name: file.name });
+      img.onload = () => resolve({ id: generateId(), element: img, size: file.size, type: file.type, name: file.name });
     };
     reader.readAsDataURL(file);
   });

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import "@/styles/globals.css";
 import { handleVersionUpdate } from "@/modules/update";
+import Navbar from "@/components/navbar/Navbar";
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -206,8 +207,8 @@ export default function App({ Component, pageProps }: AppProps) {
       </Head>
 
       {/* Google tag (gtag.js) */}
-      <Script src="https://www.googletagmanager.com/gtag/js?id=G-SP956DD2LH" strategy="worker" />
-      <Script id="google-analytics" strategy="worker">
+      <Script src="https://www.googletagmanager.com/gtag/js?id=G-SP956DD2LH" strategy="afterInteractive" />
+      <Script id="google-analytics" strategy="afterInteractive">
         {`window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
@@ -215,7 +216,12 @@ export default function App({ Component, pageProps }: AppProps) {
             gtag('config', 'G-SP956DD2LH');`}
       </Script>
 
-      {!loading && router.isReady && <Component router={router} {...pageProps} />}
+      {!loading && router.isReady && (
+        <>
+          <Navbar />
+          <Component router={router} {...pageProps} />
+        </>
+      )}
     </>
   );
 }

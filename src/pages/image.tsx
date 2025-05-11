@@ -1,12 +1,15 @@
 /* eslint-disable no-var */
 /* eslint-disable @next/next/no-img-element */
 import Head from "next/head";
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, isValidElement } from "react";
 import { BsImages } from "react-icons/bs";
-import { ImageFormat, LoadedImage, MergedImage, MergeDirection, DimensionStrategy } from "@/types";
-import { calcSize, download, formatFileSize, minmax, sum } from "@/modules/utils";
+import ReorderList, { ReorderIcon } from "react-reorder-list";
+
 import { imageFormatDescriptions, imageFormats, mergeDirections, dimensionStrategies, dimensionStrategyDescriptions } from "@/constants";
 import { loadImages } from "@/modules/image";
+import { calcSize, download, formatFileSize, minmax, sum } from "@/modules/utils";
+import { ImageFormat, LoadedImage, MergedImage, MergeDirection, DimensionStrategy } from "@/types";
+import FileDropZone from "@/components/FileDropZone";
 
 export default function ImageMerger() {
   const [loadedImages, setLoadedImages] = useState<LoadedImage[]>([]);
@@ -16,17 +19,17 @@ export default function ImageMerger() {
   const [outputFormat, setOutputFormat] = useState<ImageFormat>("jpeg");
   const [quality, setQuality] = useState(0.8);
   const [backgroundColor, setBackgroundColor] = useState("#ffffff");
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const totalSize = useMemo(() => calcSize(loadedImages), [loadedImages]);
   const isOriginal = dimensionStrategy === "original";
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const { files } = event.target;
-    if (!files?.length) return;
-    setLoadedImages([]);
-    setMergedImage(null);
-    loadImages(files).then((images) => setLoadedImages(images.filter((img) => img !== null)));
+    if (files?.length) {
+      setMergedImage(null);
+      loadImages(files).then((images) => setLoadedImages((prev) => prev.concat(images.filter((img) => img !== null))));
+    }
+    event.target.value = "";
   }
 
   function mergeImages() {
@@ -85,7 +88,6 @@ export default function ImageMerger() {
   function clearAll() {
     setLoadedImages([]);
     setMergedImage(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   useEffect(() => {
@@ -100,30 +102,52 @@ export default function ImageMerger() {
         <title>Image Merger | FilesMerger</title>
       </Head>
 
-      <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 py-12">
+      <main className="py-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white dark:bg-slate-800 shadow-xl rounded-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-5">
               <h1 className="text-3xl font-bold text-white">Image Merger</h1>
             </div>
 
-            <div className="p-6 space-y-8">
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Select Images</label>
-                <div className="flex items-center justify-center w-full">
-                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-slate-50 dark:bg-slate-700/30 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <BsImages className="w-8 h-8 text-slate-500 dark:text-slate-400 mb-3 scale-90" />
-                      <p className="mb-2 text-sm text-slate-500 dark:text-slate-400">
-                        <span className="font-semibold">Click to upload</span> or drag and drop
-                      </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">Select multiple image files</p>
-                    </div>
-                    <input ref={fileInputRef} type="file" className="hidden" accept="image/*" multiple onChange={handleFileChange} />
-                  </label>
+            <div className="p-5 space-y-8">
+              <FileDropZone tool="image" Icon={BsImages} handleFileChange={handleFileChange} totalSize={totalSize} />
+
+              {loadedImages.length > 0 && (
+                <div className="space-y-2">
+                  <ReorderList
+                    useOnlyIconToDrag
+                    watchChildrenUpdates
+                    animationDuration={200}
+                    props={{ className: "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4" }}
+                    onPositionChange={({ newItems }) => {
+                      const reorderedImages = newItems.flatMap((item) => (isValidElement(item) ? loadedImages.find(({ id }) => item.key?.includes(id))! : []));
+                      setLoadedImages(reorderedImages);
+                    }}
+                  >
+                    {loadedImages.map(({ id, element, name, size }, index) => (
+                      <div key={id} className="relative group">
+                        <ReorderIcon className="absolute top-1 left-1 z-10 cursor-grab rounded-full scale-90 p-1 shadow bg-white/50 dark:bg-slate-900/50" />
+                        <button
+                          onClick={() => setLoadedImages((prev) => prev.filter((file) => file.id !== id))}
+                          className="absolute top-1.5 right-1 z-10 text-red-500 hover:text-red-700 rounded-full w-6 h-6 flex items-center justify-center shadow bg-white/50 dark:bg-slate-900/50"
+                          aria-label="Remove image"
+                        >
+                          ✕
+                        </button>
+                        <div className="aspect-square overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
+                          <img src={element.src} alt={`Preview ${index}`} className="w-full h-full object-contain" />
+                        </div>
+                        <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                          <p className="truncate">{name}</p>
+                          <p>
+                            {element.width}×{element.height} • {formatFileSize(size)}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </ReorderList>
                 </div>
-                {totalSize > 0 && <p className="text-sm text-slate-500 dark:text-slate-400">Total size: {formatFileSize(totalSize)}</p>}
-              </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                 <div className="space-y-4">
@@ -206,27 +230,6 @@ export default function ImageMerger() {
                   )}
                 </div>
               </div>
-
-              {loadedImages.length !== 0 && (
-                <div className="space-y-2">
-                  <h3 className="text-lg font-medium text-slate-900 dark:text-white">Selected Images</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    {loadedImages.map((img, index) => (
-                      <div key={index} className="relative group">
-                        <div className="aspect-square overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
-                          <img src={img.element.src} alt={`Preview ${index}`} className="w-full h-full object-contain" />
-                        </div>
-                        <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                          <p className="truncate">{img.name}</p>
-                          <p>
-                            {img.element.width}×{img.element.height} • {formatFileSize(img.size)}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               <div className="flex flex-wrap gap-3">
                 <button

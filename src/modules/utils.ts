@@ -21,6 +21,8 @@ export function formatFileSize(bytes: number) {
   return `${bytes && bytesToSize(bytes, unit).toFixed(2)} ${unit}`;
 }
 
+export const generateId = () => crypto.randomUUID();
+
 export const minmax = (a: number, b: number, useMin: boolean) => (useMin ? Math.min(a, b) : Math.max(a, b));
 
 export function rangeToPages(range: string) {

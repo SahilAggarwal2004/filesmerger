@@ -3,18 +3,22 @@ import type { ImageFormat, DimensionStrategy } from "./types";
 // General
 export const sizes = { B: 1, KB: 1024, MB: 1048576, GB: 1073741824 }; // In bytes
 
-export const tools = [
-  {
+export const tools = {
+  image: {
     title: "Image Merger",
+    label: "Image",
     description: "Merge multiple images into a single output seamlessly.",
     href: "/image",
+    mimetype: "image/*",
   },
-  {
+  pdf: {
     title: "PDF Merger",
+    label: "PDF",
     description: "Combine PDFs with full control over page selection and order.",
     href: "/pdf",
+    mimetype: "application/pdf",
   },
-];
+};
 
 // Image
 export const dimensionStrategyDescriptions = {
