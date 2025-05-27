@@ -32,6 +32,8 @@ export default function App({ Component, pageProps }: AppProps) {
         <meta name="description" content="FilesMerger helps you quickly and easily merge multiple files into a single document." />
         <link rel="manifest" href="/manifest.json" />
 
+        <meta name="google-site-verification" content="5_rdfkDpTLo7tXDzIkEfmQb1wH_0AmpbcQOAPhLNBLQ" />
+
         <meta name="mobile-web-app-capable" content="yes" />
         <link rel="apple-touch-icon" href="icons/apple-icon-180.png" />
         <link

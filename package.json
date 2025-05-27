@@ -24,7 +24,7 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/serviceworker": "^0.0.134",
+    "@types/serviceworker": "^0.0.135",
     "eslint": "^9",
     "eslint-config-next": "15.3.2",
     "serwist": "^9.0.14",
