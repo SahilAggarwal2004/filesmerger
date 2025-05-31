@@ -1,5 +1,4 @@
 import { PDFDocument } from "pdf-lib";
-import { rangeToPages } from "./utils";
 
 export async function mergePdfs() {
   const mergedPdf = await PDFDocument.create();
@@ -13,4 +12,19 @@ export async function mergePdfs() {
   }
 
   return [mergedPdf, handleFile] as const;
+}
+
+function rangeToPages(range: string) {
+  if (!range) return null;
+  return range
+    .split(",")
+    .flatMap((part) => {
+      if (part.includes("-")) {
+        const [start, end] = part.split("-").map((n) => +n.trim());
+        const step = start <= end ? 1 : -1;
+        return Array.from({ length: Math.abs(end - start) + 1 }, (_, i) => start + i * step - 1);
+      }
+      return [+part.trim() - 1];
+    })
+    .filter((n) => !isNaN(n) && n >= 0);
 }

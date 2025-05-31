@@ -11,7 +11,7 @@ The **Image Merger** tool allows you to combine multiple image files into one. W
 - **Select multiple image files** for merging
 - **Choose merge direction**: horizontal or vertical
 - **Adjust image dimensions** with options for maintaining original size or scaling
-- **Choose output format**: JPEG, PNG, etc.
+- **Choose output format**: JPEG, PNG, WebP
 - **Set image quality** and **background color**
 
 ### PDF Merger
@@ -22,6 +22,16 @@ The **PDF Merger** tool enables you to merge multiple PDF files into a single do
 - **Choose pages to include** using range selectors (e.g., `1-3, 5`)
 - **Simple and advanced modes** for flexible merging workflows
 - **Drag and drop to reorder PDFs** in advanced mode
+
+### Audio Merger
+
+The **Audio Merger** tool combines multiple audio files into a single output with precise control over timing and arrangement. Whether you need simple concatenation or complex audio layering, this tool provides the flexibility to create professional audio compositions.
+
+- **Merge multiple audio files** into one seamless track
+- **Simple and advanced modes** for sequential merging or complex overlapping arrangements
+- **Trim audio segments** using time ranges with playback controls for preview
+- **Drag and drop reordering** for both files and audio segments
+- **Choose output format**: WAV (uncompressed) or MP3 (compressed) with bitrate control
 
 ### More Tools Coming Soon!
 

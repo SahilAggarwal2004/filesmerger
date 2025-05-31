@@ -147,7 +147,7 @@ export default function PdfMerger() {
                               placeholder="e.g. 1-5, 8, 11-13"
                               value={range}
                               onChange={(e) => handleAdvancedUpdate(id, { range: e.target.value })}
-                              className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
+                              className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white grow"
                             />
                             <button onClick={() => setAdvancedSelections((prev) => prev.filter((sel) => sel.id !== id))} className="text-red-500 hover:text-red-700 ml-auto mr-1.5">
                               ✕

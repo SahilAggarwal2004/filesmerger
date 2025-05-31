@@ -1,8 +1,8 @@
 import { LoadedImage } from "@/types";
 import { generateId } from "./utils";
 
-const loadImage = (file: File) => {
-  if (!file.type.match("image.*")) return Promise.resolve(null);
+function loadImage(file: File) {
+  if (!file.type.startsWith("image/")) return Promise.resolve(null);
   return new Promise<LoadedImage>((resolve) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -12,7 +12,7 @@ const loadImage = (file: File) => {
     };
     reader.readAsDataURL(file);
   });
-};
+}
 
 export function loadImages(files: FileList) {
   const imagePromises = Array.from(files).map(loadImage);

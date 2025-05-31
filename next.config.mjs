@@ -2,7 +2,8 @@ import fs from "fs"
 import withSerwistInit from "@serwist/next";
 import packageJSON from "./package.json" with { type: "json" };
 
-const pages = ["/", "/image", "/pdf"];
+const pages = ["/", "/image", "/pdf", "/audio"];
+const resources = ["https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.all.js"]
 const revision = Date.now().toString();
 
 const withPWA = withSerwistInit({
@@ -12,7 +13,7 @@ const withPWA = withSerwistInit({
   disable: process.env.NODE_ENV === "development",
   register: false,
   reloadOnOnline: false,
-  additionalPrecacheEntries: pages.map((url) => ({ url, revision })),
+  additionalPrecacheEntries: pages.concat(resources).map((url) => ({ url, revision })),
 });
 
 /** @type {import('next').NextConfig} */

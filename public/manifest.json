@@ -1,8 +1,8 @@
 {
   "short_name": "FilesMerger",
   "name": "FilesMerger - Merge Files Effortlessly!",
-  "version": "1.2.0",
-  "id": "1.2.0",
+  "version": "1.3.0",
+  "id": "1.3.0",
   "manifest_version": 2,
   "description": "FilesMerger helps you quickly and easily merge multiple files into a single document.",
   "author": "Sahil Aggarwal",
