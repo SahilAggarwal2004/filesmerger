@@ -27,18 +27,6 @@ export default function Navbar() {
           ))}
         </div>
       </Expandable>
-      {/* </div> */}
-      {/* Mobile Menu */}
-      {/* <div className={`${!hide ? "block" : "hidden"} md:hidden`}>
-        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-          <Link href="/pdf" passHref>
-            <button className="text-white hover:text-indigo-200 block px-3 py-2 rounded-md text-base font-medium">PDF Merger</button>
-          </Link>
-          <Link href="/images" passHref>
-            <button className="text-white hover:text-indigo-200 block px-3 py-2 rounded-md text-base font-medium">Image Tools</button>
-          </Link>
-        </div>
-      </div> */}
     </nav>
   );
 }

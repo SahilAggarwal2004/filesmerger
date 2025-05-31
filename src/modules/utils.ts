@@ -25,19 +25,4 @@ export const generateId = () => crypto.randomUUID();
 
 export const minmax = (a: number, b: number, useMin: boolean) => (useMin ? Math.min(a, b) : Math.max(a, b));
 
-export function rangeToPages(range: string) {
-  if (!range) return null;
-  return range
-    .split(",")
-    .flatMap((part) => {
-      if (part.includes("-")) {
-        const [start, end] = part.split("-").map((n) => +n.trim());
-        const step = start <= end ? 1 : -1;
-        return Array.from({ length: Math.abs(end - start) + 1 }, (_, i) => start + i * step - 1);
-      }
-      return [+part.trim() - 1];
-    })
-    .filter((n) => !isNaN(n) && n >= 0);
-}
-
 export const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
