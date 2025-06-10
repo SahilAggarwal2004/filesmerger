@@ -9,6 +9,8 @@ export const bytesToSize = (bytes: number, unit: Unit) => bytes / sizes[unit];
 
 export const calcSize = (files: Pick<File, "size">[]) => files.reduce((acc, file) => acc + file.size, 0);
 
+export const clamp = (value: number, min: number, max: number): number => Math.min(Math.max(value, min), max);
+
 export function download(url: string, name: string) {
   const link = document.createElement("a");
   link.href = url;

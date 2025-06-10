@@ -1,4 +1,4 @@
-import { LoadedAudio, AudioFormat } from "@/types";
+import { LoadedAudio, AudioFormat, AudioSegment } from "@/types";
 import { generateId } from "./utils";
 
 function audioBufferToWav(buffer: AudioBuffer) {
@@ -76,8 +76,8 @@ async function audioBufferToMp3(buffer: AudioBuffer, bitrateValue: number) {
   });
 }
 
-export function combineAudioBuffers(ctx: AudioContext, segments: Array<{ buffer: AudioBuffer; startTime: number }>) {
-  if (segments.length === 0) return null;
+export function combineAudioBuffers(ctx: AudioContext, segments: AudioSegment[]) {
+  if (!segments.length) return null;
 
   const sampleRate = segments[0].buffer.sampleRate;
   const numberOfChannels = Math.max(...segments.map((s) => s.buffer.numberOfChannels));
@@ -86,12 +86,12 @@ export function combineAudioBuffers(ctx: AudioContext, segments: Array<{ buffer:
 
   for (let channel = 0; channel < numberOfChannels; channel++) {
     const combinedData = combinedBuffer.getChannelData(channel);
-    segments.forEach(({ buffer, startTime }) => {
+    segments.forEach(({ buffer, startTime, volume }) => {
       const channelData = buffer.getChannelData(Math.min(channel, buffer.numberOfChannels - 1));
       const startSample = Math.floor(startTime * sampleRate);
       for (let i = 0; i < buffer.length; i++) {
         const targetIndex = startSample + i;
-        if (targetIndex < combinedData.length) combinedData[targetIndex] += channelData[i] * 0.7;
+        if (targetIndex < combinedData.length) combinedData[targetIndex] += channelData[i] * volume;
       }
     });
   }

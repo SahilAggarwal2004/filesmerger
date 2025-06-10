@@ -1,6 +1,8 @@
 import type { ImageFormat, DimensionStrategy, AudioFormat } from "./types";
 
 // General
+export const modes = ["simple", "advanced"] as const;
+
 export const sizes = { B: 1, KB: 1024, MB: 1048576, GB: 1073741824 }; // In bytes
 
 export const tools = {
@@ -45,9 +47,6 @@ export const imageFormatDescriptions = {
 export const imageFormats = Object.keys(imageFormatDescriptions) as ImageFormat[];
 
 export const mergeDirections = ["vertical", "horizontal"] as const;
-
-// PDF
-export const modes = ["simple", "advanced"] as const;
 
 // Audio
 export const audioFormatDescriptions = {

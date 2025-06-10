@@ -5,14 +5,16 @@ import { useState, useEffect, useMemo, isValidElement } from "react";
 import { BsImages } from "react-icons/bs";
 import ReorderList, { ReorderIcon } from "react-reorder-list";
 
-import { imageFormatDescriptions, imageFormats, mergeDirections, dimensionStrategies, dimensionStrategyDescriptions } from "@/constants";
-import { loadImages } from "@/modules/image";
-import { calcSize, download, formatFileSize, minmax, sum } from "@/modules/utils";
-import { ImageFormat, LoadedImage, MergedImage, MergeDirection, DimensionStrategy } from "@/types";
+import { imageFormatDescriptions, imageFormats, mergeDirections, dimensionStrategies, dimensionStrategyDescriptions, modes } from "@/constants";
+import { cropImage, loadImages } from "@/modules/image";
+import { calcSize, download, formatFileSize, minmax, sum, generateId } from "@/modules/utils";
+import { ImageFormat, LoadedImage, MergedImage, MergeDirection, DimensionStrategy, ImageSelections, ProcessedImage } from "@/types";
 import FileDropZone from "@/components/FileDropZone";
 
 export default function ImageMerger() {
   const [loadedImages, setLoadedImages] = useState<LoadedImage[]>([]);
+  const [selectedMode, setSelectedMode] = useState<Mode>("simple");
+  const [advancedSelections, setAdvancedSelections] = useState<ImageSelections["advanced"]>([]);
   const [mergedImage, setMergedImage] = useState<MergedImage>(null);
   const [mergeDirection, setMergeDirection] = useState<MergeDirection>("vertical");
   const [dimensionStrategy, setDimensionStrategy] = useState<DimensionStrategy>("minimum");
@@ -22,6 +24,9 @@ export default function ImageMerger() {
 
   const totalSize = useMemo(() => calcSize(loadedImages), [loadedImages]);
   const isOriginal = dimensionStrategy === "original";
+
+  const handleAdvancedUpdate = (id: string, update: PartialAdvancedSelection<ImageSelections>) =>
+    setAdvancedSelections((prev) => prev.map((sel) => (sel.id === id ? { ...sel, ...update } : sel)));
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const { files } = event.target;
@@ -37,15 +42,29 @@ export default function ImageMerger() {
     const isHorizontal = mergeDirection === "horizontal";
     const isMinimum = dimensionStrategy === "minimum";
 
+    let processedImages: ProcessedImage[];
+
+    if (selectedMode === "simple") processedImages = loadedImages.map(({ element }) => ({ element, width: element.width, height: element.height }));
+    else
+      processedImages = advancedSelections
+        .map((selection) => ({
+          element: loadedImages[selection.imageIndex]?.element,
+          cropOptions: selection,
+        }))
+        .filter(({ element }) => element)
+        .map(({ element, cropOptions }) => cropImage(element, cropOptions));
+
+    if (!processedImages.length) return;
+
     if (isHorizontal) {
       var canvasHeight = isMinimum ? Infinity : 0;
-      loadedImages.forEach(({ element: { height } }) => (canvasHeight = minmax(canvasHeight, height, isMinimum)));
-      var widths = loadedImages.map(({ element: { width, height } }) => (isOriginal ? width : (width * canvasHeight) / height));
+      processedImages.forEach(({ height }) => (canvasHeight = minmax(canvasHeight, height, isMinimum)));
+      var widths = processedImages.map(({ width, height }) => (isOriginal ? width : (width * canvasHeight) / height));
       var canvasWidth = sum(widths);
     } else {
       canvasWidth = isMinimum ? Infinity : 0;
-      loadedImages.forEach(({ element: { width } }) => (canvasWidth = minmax(canvasWidth, width, isMinimum)));
-      var heights = loadedImages.map(({ element: { width, height } }) => (isOriginal ? height : (height * canvasWidth) / width));
+      processedImages.forEach(({ width }) => (canvasWidth = minmax(canvasWidth, width, isMinimum)));
+      var heights = processedImages.map(({ width, height }) => (isOriginal ? height : (height * canvasWidth) / width));
       canvasHeight = sum(heights);
     }
 
@@ -61,15 +80,15 @@ export default function ImageMerger() {
 
     if (isHorizontal) {
       let offset = 0;
-      loadedImages.forEach(({ element }, index) => {
-        if (isOriginal) ctx.drawImage(element, offset, (canvasHeight - element.height) / 2, widths[index], element.height);
+      processedImages.forEach(({ element, height }, index) => {
+        if (isOriginal) ctx.drawImage(element, offset, (canvasHeight - height) / 2, widths[index], height);
         else ctx.drawImage(element, offset, 0, widths[index], canvasHeight);
         offset += widths[index];
       });
     } else {
       let offset = 0;
-      loadedImages.forEach(({ element }, index) => {
-        if (isOriginal) ctx.drawImage(element, (canvasWidth - element.width) / 2, offset, element.width, heights[index]);
+      processedImages.forEach(({ element, width }, index) => {
+        if (isOriginal) ctx.drawImage(element, (canvasWidth - width) / 2, offset, width, heights[index]);
         else ctx.drawImage(element, 0, offset, canvasWidth, heights[index]);
         offset += heights[index];
       });
@@ -87,6 +106,7 @@ export default function ImageMerger() {
 
   function clearAll() {
     setLoadedImages([]);
+    setAdvancedSelections([]);
     setMergedImage(null);
   }
 
@@ -113,39 +133,140 @@ export default function ImageMerger() {
               <FileDropZone tool="image" Icon={BsImages} handleFileChange={handleFileChange} totalSize={totalSize} />
 
               {loadedImages.length > 0 && (
-                <div className="space-y-2">
-                  <ReorderList
-                    useOnlyIconToDrag
-                    watchChildrenUpdates
-                    animationDuration={200}
-                    props={{ className: "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4" }}
-                    onPositionChange={({ newItems }) => {
-                      const reorderedImages = newItems.flatMap((item) => (isValidElement(item) ? loadedImages.find(({ id }) => item.key?.includes(id))! : []));
-                      setLoadedImages(reorderedImages);
-                    }}
-                  >
-                    {loadedImages.map(({ id, element, name, size }, index) => (
-                      <div key={id} className="relative group">
-                        <ReorderIcon className="absolute top-1 left-1 z-10 cursor-grab rounded-full scale-90 p-1 shadow bg-white/50 dark:bg-slate-900/50" />
-                        <button
-                          onClick={() => setLoadedImages((prev) => prev.filter((file) => file.id !== id))}
-                          className="absolute top-1.5 right-1 z-10 text-red-500 hover:text-red-700 rounded-full w-6 h-6 flex items-center justify-center shadow bg-white/50 dark:bg-slate-900/50"
-                          aria-label="Remove image"
-                        >
-                          ✕
-                        </button>
-                        <div className="aspect-square overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
-                          <img src={element.src} alt={`Preview ${index}`} className="w-full h-full object-contain" />
-                        </div>
-                        <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                          <p className="truncate">{name}</p>
-                          <p>
-                            {element.width}×{element.height} • {formatFileSize(size)}
-                          </p>
-                        </div>
-                      </div>
+                <div className="space-y-4">
+                  <div className="flex gap-2 mb-4">
+                    {modes.map((mode) => (
+                      <button
+                        key={mode}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium shadow capitalize ${
+                          mode === selectedMode ? "bg-blue-600 text-white" : "bg-slate-200 dark:bg-slate-700 dark:text-white"
+                        }`}
+                        onClick={() => setSelectedMode(mode)}
+                      >
+                        {mode} Mode
+                      </button>
                     ))}
-                  </ReorderList>
+                  </div>
+
+                  {selectedMode === "simple" ? (
+                    <div className="space-y-2">
+                      <ReorderList
+                        useOnlyIconToDrag
+                        watchChildrenUpdates
+                        animationDuration={200}
+                        props={{ className: "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4" }}
+                        onPositionChange={({ newItems }) => {
+                          const reorderedImages = newItems.flatMap((item) => (isValidElement(item) ? loadedImages.find(({ id }) => item.key?.includes(id))! : []));
+                          setLoadedImages(reorderedImages);
+                        }}
+                      >
+                        {loadedImages.map(({ id, element, name, size }, index) => (
+                          <div key={id} className="relative group">
+                            <ReorderIcon className="absolute top-1 left-1 z-10 cursor-grab rounded-full scale-90 p-1 shadow bg-white/50 dark:bg-slate-900/50" />
+                            <button
+                              onClick={() => setLoadedImages((prev) => prev.filter((file) => file.id !== id))}
+                              className="absolute top-1.5 right-1 z-10 text-red-500 hover:text-red-700 rounded-full w-6 h-6 flex items-center justify-center shadow bg-white/50 dark:bg-slate-900/50"
+                              aria-label="Remove image"
+                            >
+                              ✕
+                            </button>
+                            <div className="aspect-square overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
+                              <img src={element.src} alt={`Preview ${index}`} className="w-full h-full object-contain" />
+                            </div>
+                            <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                              <p className="truncate">{name}</p>
+                              <p>
+                                {element.width}×{element.height} • {formatFileSize(size)}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </ReorderList>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <ReorderList
+                        useOnlyIconToDrag
+                        watchChildrenUpdates
+                        animationDuration={200}
+                        props={{ className: "space-y-2" }}
+                        onPositionChange={({ newItems }) => {
+                          const reorderedSelections = newItems.flatMap((item) => (isValidElement(item) ? advancedSelections.find(({ id }) => item.key?.includes(id))! : []));
+                          setAdvancedSelections(reorderedSelections);
+                        }}
+                      >
+                        {advancedSelections.map((selection) => (
+                          <div key={selection.id} className="flex items-center py-2 border rounded-xl shadow-sm">
+                            <ReorderIcon className="w-5 mx-1 shrink-0" />
+                            <div className="flex gap-2 grow flex-col justify-center">
+                              <select
+                                value={selection.imageIndex}
+                                onChange={(e) => handleAdvancedUpdate(selection.id, { imageIndex: +e.target.value })}
+                                className="flex-1 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
+                              >
+                                {loadedImages.map(({ name }, i) => (
+                                  <option key={i} value={i}>
+                                    {name}
+                                  </option>
+                                ))}
+                              </select>
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                <input
+                                  type="number"
+                                  placeholder="X (px)"
+                                  value={selection.x ?? ""}
+                                  onChange={(e) => handleAdvancedUpdate(selection.id, { x: e.target.value ? +e.target.value : undefined })}
+                                  className="p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
+                                  min={0}
+                                />
+                                <input
+                                  type="number"
+                                  placeholder="Y (px)"
+                                  value={selection.y ?? ""}
+                                  onChange={(e) => handleAdvancedUpdate(selection.id, { y: e.target.value ? +e.target.value : undefined })}
+                                  className="p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
+                                  min={0}
+                                />
+                                <input
+                                  type="number"
+                                  placeholder="Width (px)"
+                                  value={selection.width ?? ""}
+                                  onChange={(e) => handleAdvancedUpdate(selection.id, { width: e.target.value ? +e.target.value : undefined })}
+                                  className="p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
+                                  min={1}
+                                />
+                                <input
+                                  type="number"
+                                  placeholder="Height (px)"
+                                  value={selection.height ?? ""}
+                                  onChange={(e) => handleAdvancedUpdate(selection.id, { height: e.target.value ? +e.target.value : undefined })}
+                                  className="p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
+                                  min={1}
+                                />
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => setAdvancedSelections((prev) => prev.filter((sel) => sel.id !== selection.id))}
+                              className="text-red-500 hover:text-red-700 w-5 mx-1 shrink-0"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </ReorderList>
+                      {advancedSelections.length > 0 && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400 italic">
+                          Leave crop fields empty to use the full image. X/Y specify the crop starting position, Width/Height specify the crop dimensions.
+                        </p>
+                      )}
+                      <button
+                        onClick={() => setAdvancedSelections((prev) => [...prev, { id: generateId(), imageIndex: 0 }])}
+                        className="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg shadow text-sm"
+                      >
+                        + Add Image Selection
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -233,7 +354,7 @@ export default function ImageMerger() {
 
               <div className="flex flex-wrap gap-3">
                 <button
-                  disabled={!loadedImages.length}
+                  disabled={selectedMode === "simple" ? !loadedImages.length : !advancedSelections.length}
                   onClick={mergeImages}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white rounded-lg shadow-sm transition-colors disabled:cursor-not-allowed"
                 >

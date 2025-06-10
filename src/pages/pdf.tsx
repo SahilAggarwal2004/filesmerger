@@ -6,19 +6,19 @@ import ReorderList, { ReorderIcon } from "react-reorder-list";
 import { modes } from "@/constants";
 import { mergePdfs } from "@/modules/pdf";
 import { calcSize, download, generateId } from "@/modules/utils";
-import { Mode, PDFFile, Selections } from "@/types";
+import { PDFFile, PDFSelections } from "@/types";
 import FileDropZone from "@/components/FileDropZone";
 
 export default function PdfMerger() {
   const [pdfFiles, setPdfFiles] = useState<PDFFile[]>([]);
-  const [simpleSelections, setSimpleSelections] = useState<Selections["simple"]>({});
-  const [advancedSelections, setAdvancedSelections] = useState<Selections["advanced"]>([]);
   const [selectedMode, setSelectedMode] = useState<Mode>("simple");
+  const [simpleSelections, setSimpleSelections] = useState<PDFSelections["simple"]>({});
+  const [advancedSelections, setAdvancedSelections] = useState<PDFSelections["advanced"]>([]);
   const [mergedPdfUrl, setMergedPdfUrl] = useState<string | null>(null);
 
   const totalSize = useMemo(() => calcSize(pdfFiles.map(({ file }) => file)), [pdfFiles]);
 
-  const handleAdvancedUpdate = (id: string, update: Partial<Selections["advanced"][number]>) =>
+  const handleAdvancedUpdate = (id: string, update: PartialAdvancedSelection<PDFSelections>) =>
     setAdvancedSelections((prev) => prev.map((sel) => (sel.id === id ? { ...sel, ...update } : sel)));
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -88,7 +88,7 @@ export default function PdfMerger() {
                       <ReorderList
                         useOnlyIconToDrag
                         watchChildrenUpdates
-                        animationDuration={150}
+                        animationDuration={200}
                         props={{ className: "space-y-2" }}
                         onPositionChange={({ newItems }) => {
                           const reorderedFiles = newItems.flatMap((item) => (isValidElement(item) ? pdfFiles.find(({ id }) => item.key?.includes(id))! : []));
@@ -96,19 +96,21 @@ export default function PdfMerger() {
                         }}
                       >
                         {pdfFiles.map(({ id, file }) => (
-                          <div key={id} className="flex gap-2 items-center px-3 py-2 border rounded-xl shadow-sm text-sm w-full">
-                            <ReorderIcon />
-                            <span className="inline-block min-w-1/3 max-w-1/2 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white overflow-hidden">
-                              <span className="block whitespace-nowrap overflow-hidden text-ellipsis">{file.name}</span>
-                            </span>
-                            <input
-                              type="text"
-                              placeholder="e.g. 1-5, 8, 11-13"
-                              value={simpleSelections[id] || ""}
-                              onChange={(e) => setSimpleSelections({ ...simpleSelections, [id]: e.target.value })}
-                              className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
-                            />
-                            <button onClick={() => setPdfFiles((prev) => prev.filter((file) => file.id !== id))} className="text-red-500 hover:text-red-700 ml-auto mr-1.5">
+                          <div key={id} className="flex items-center py-2 border rounded-xl shadow-sm text-sm">
+                            <ReorderIcon className="w-5 mx-1 shrink-0" />
+                            <div className="flex gap-2 grow items-center">
+                              <span className="inline-block min-w-1/3 max-w-1/2 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white overflow-hidden">
+                                <span className="block whitespace-nowrap overflow-hidden text-ellipsis">{file.name}</span>
+                              </span>
+                              <input
+                                type="text"
+                                placeholder="e.g. 1-5, 8, 11-13"
+                                value={simpleSelections[id] ?? ""}
+                                onChange={(e) => setSimpleSelections({ ...simpleSelections, [id]: e.target.value })}
+                                className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white grow"
+                              />
+                            </div>
+                            <button onClick={() => setPdfFiles((prev) => prev.filter((file) => file.id !== id))} className="text-red-500 hover:text-red-700 w-5 mx-1 shrink-0">
                               ✕
                             </button>
                           </div>
@@ -121,7 +123,7 @@ export default function PdfMerger() {
                       <ReorderList
                         useOnlyIconToDrag
                         watchChildrenUpdates
-                        animationDuration={150}
+                        animationDuration={200}
                         props={{ className: "space-y-2" }}
                         onPositionChange={({ newItems }) => {
                           const reorderedSelections = newItems.flatMap((item) => (isValidElement(item) ? advancedSelections.find(({ id }) => item.key?.includes(id))! : []));
@@ -129,27 +131,32 @@ export default function PdfMerger() {
                         }}
                       >
                         {advancedSelections.map(({ id, pdfIndex, range }) => (
-                          <div key={id} className="flex gap-2 items-center px-2.5 py-2 border rounded-xl shadow-sm text-sm w-full">
-                            <ReorderIcon />
-                            <select
-                              value={pdfIndex}
-                              onChange={(e) => handleAdvancedUpdate(id, { pdfIndex: +e.target.value })}
-                              className="max-w-1/3 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
+                          <div key={id} className="flex items-center py-2 border rounded-xl shadow-sm text-sm">
+                            <ReorderIcon className="w-5 mx-1 shrink-0" />
+                            <div className="flex gap-2 grow items-center">
+                              <select
+                                value={pdfIndex}
+                                onChange={(e) => handleAdvancedUpdate(id, { pdfIndex: +e.target.value })}
+                                className="max-w-1/3 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
+                              >
+                                {pdfFiles.map(({ file }, i) => (
+                                  <option key={i} value={i}>
+                                    {file.name}
+                                  </option>
+                                ))}
+                              </select>
+                              <input
+                                type="text"
+                                placeholder="e.g. 1-5, 8, 11-13"
+                                value={range}
+                                onChange={(e) => handleAdvancedUpdate(id, { range: e.target.value })}
+                                className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white grow"
+                              />
+                            </div>
+                            <button
+                              onClick={() => setAdvancedSelections((prev) => prev.filter((sel) => sel.id !== id))}
+                              className="text-red-500 hover:text-red-700 w-5 mx-1 shrink-0"
                             >
-                              {pdfFiles.map(({ file }, i) => (
-                                <option key={i} value={i}>
-                                  {file.name}
-                                </option>
-                              ))}
-                            </select>
-                            <input
-                              type="text"
-                              placeholder="e.g. 1-5, 8, 11-13"
-                              value={range}
-                              onChange={(e) => handleAdvancedUpdate(id, { range: e.target.value })}
-                              className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white grow"
-                            />
-                            <button onClick={() => setAdvancedSelections((prev) => prev.filter((sel) => sel.id !== id))} className="text-red-500 hover:text-red-700 ml-auto mr-1.5">
                               ✕
                             </button>
                           </div>
@@ -172,7 +179,7 @@ export default function PdfMerger() {
               <div className="flex gap-3 flex-wrap">
                 <button
                   onClick={handleMerge}
-                  disabled={!pdfFiles.length}
+                  disabled={selectedMode === "simple" ? !pdfFiles.length : !advancedSelections.length}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:cursor-not-allowed"
                 >
                   Merge PDFs
