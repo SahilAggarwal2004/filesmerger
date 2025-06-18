@@ -99,12 +99,12 @@ export default function PdfMerger() {
                           <div key={id} className="flex items-center py-2 border rounded-xl shadow-sm text-sm">
                             <ReorderIcon className="w-5 mx-1 shrink-0" />
                             <div className="flex gap-2 grow items-center">
-                              <span className="inline-block min-w-1/3 max-w-1/2 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white overflow-hidden">
+                              <span className="inline-block min-w-1/3! max-w-1/2 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white overflow-hidden">
                                 <span className="block whitespace-nowrap overflow-hidden text-ellipsis">{file.name}</span>
                               </span>
                               <input
                                 type="text"
-                                placeholder="e.g. 1-5, 8, 11-13"
+                                placeholder="Range (e.g. 1-5, 8, 11-13)"
                                 value={simpleSelections[id] ?? ""}
                                 onChange={(e) => setSimpleSelections({ ...simpleSelections, [id]: e.target.value })}
                                 className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white grow"
@@ -147,7 +147,7 @@ export default function PdfMerger() {
                               </select>
                               <input
                                 type="text"
-                                placeholder="e.g. 1-5, 8, 11-13"
+                                placeholder="Range (e.g. 1-5, 8, 11-13)"
                                 value={range}
                                 onChange={(e) => handleAdvancedUpdate(id, { range: e.target.value })}
                                 className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white grow"

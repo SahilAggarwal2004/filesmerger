@@ -20,7 +20,7 @@ self.onmessage = function (e) {
       }
 
       const chunk = encoder.encodeBuffer(monoBuffer);
-      if (chunk.length > 0) mp3Data.push(chunk);
+      if (chunk.length) mp3Data.push(chunk);
     } else {
       const leftBuffer = new Int16Array(currentChunkSize);
       const rightBuffer = new Int16Array(currentChunkSize);
@@ -33,14 +33,14 @@ self.onmessage = function (e) {
       }
 
       const chunk = encoder.encodeBuffer(leftBuffer, rightBuffer);
-      if (chunk.length > 0) mp3Data.push(chunk);
+      if (chunk.length) mp3Data.push(chunk);
     }
 
     samplesProcessed += currentChunkSize;
   }
 
   const finalChunk = encoder.flush();
-  if (finalChunk.length > 0) mp3Data.push(finalChunk);
+  if (finalChunk.length) mp3Data.push(finalChunk);
 
   const totalLength = mp3Data.reduce((sum, chunk) => sum + chunk.length, 0);
   const result = new Uint8Array(totalLength);

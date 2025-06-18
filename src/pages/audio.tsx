@@ -191,14 +191,14 @@ export default function AudioMerger() {
                                   <div className="flex-1">
                                     <div className="font-medium block whitespace-nowrap overflow-hidden text-ellipsis">{name}</div>
                                     <div className="text-xs text-slate-500 dark:text-slate-400">
-                                      {duration > 0 ? formatDuration(duration) : "Loading..."} • {formatFileSize(size)}
+                                      {duration ? formatDuration(duration) : "Loading..."} • {formatFileSize(size)}
                                     </div>
                                   </div>
                                 </div>
                                 <div className="grid grid-cols-1 gap-2 xs:grid-cols-2">
                                   <input
                                     type="text"
-                                    placeholder="e.g. 5-30.2 (seconds)"
+                                    placeholder="Range (e.g. 5-30.2)"
                                     value={simpleSelections[id]?.range ?? ""}
                                     onChange={(e) => handleSimpleUpdate(id, { range: e.target.value })}
                                     className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white grow"
@@ -256,7 +256,7 @@ export default function AudioMerger() {
                                 <div className="grid grid-cols-1 gap-2 xs:grid-cols-3">
                                   <input
                                     type="text"
-                                    placeholder="e.g. 5-30.2 (seconds)"
+                                    placeholder="Range (e.g. 5-30.2)"
                                     value={selection.range}
                                     onChange={(e) => handleAdvancedUpdate(selection.id, { range: e.target.value })}
                                     className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"

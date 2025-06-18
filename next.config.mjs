@@ -2,7 +2,7 @@ import fs from "fs"
 import withSerwistInit from "@serwist/next";
 import packageJSON from "./package.json" with { type: "json" };
 
-const pages = ["/", "/image", "/pdf", "/audio"];
+const pages = ["/", "/image", "/pdf", "/audio", "/zip"];
 const resources = ["https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.all.js"]
 const revision = Date.now().toString();
 

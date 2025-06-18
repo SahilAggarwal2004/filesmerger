@@ -33,6 +33,17 @@ The **Audio Merger** tool combines multiple audio files into a single output wit
 - **Drag and drop reordering** for both files and audio segments
 - **Choose output format**: WAV (uncompressed) or MP3 (compressed) with bitrate control
 
+### ZIP Merger
+
+The **ZIP Merger** tool allows you to combine multiple ZIP archives and individual files into a single organized ZIP file. With both simple and advanced modes, you can control extraction paths, apply file filters, and create custom folder structures for the perfect merged archive.
+
+- **Merge multiple ZIP files and regular files** into one archive
+- **Simple and advanced modes** for different levels of control over the merge process
+- **Extract ZIP contents to custom folders** with automatic name collision resolution
+- **Filter files using include patterns** (e.g., `*.txt,*.png`) when extracting ZIP archives
+- **Drag and drop to reorder files** and control merge sequence
+- **Flexible folder organization** - specify custom extraction paths _("." for root)_
+
 ### More Tools Coming Soon!
 
 FilesMerger is continuously evolving, and more file merging capabilities are being added to make it the go-to tool for effortlessly combining different types of files.

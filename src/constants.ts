@@ -1,11 +1,11 @@
-import type { ImageFormat, DimensionStrategy, AudioFormat } from "./types";
+import type { ImageFormat, DimensionStrategy, AudioFormat, Tools } from "./types";
 
 // General
 export const modes = ["simple", "advanced"] as const;
 
 export const sizes = { B: 1, KB: 1024, MB: 1048576, GB: 1073741824 }; // In bytes
 
-export const tools = {
+export const tools: Tools = {
   image: {
     title: "Image Merger",
     label: "Image",
@@ -26,6 +26,13 @@ export const tools = {
     description: "Merge multiple audio files into a single output seamlessly.",
     href: "/audio",
     mimetype: ".mp3,.wav,.m4a,.aac,.ogg",
+  },
+  zip: {
+    title: "ZIP Merger",
+    label: "ZIP",
+    description: "Merge ZIP and other files into a single .zip archive.",
+    href: "/zip",
+    mimetype: "*/*",
   },
 };
 

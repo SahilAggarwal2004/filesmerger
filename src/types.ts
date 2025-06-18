@@ -28,6 +28,11 @@ export type FileDropZoneProps = {
   totalSize: number;
 };
 
+// constants.ts
+export type Tools = {
+  [key: string]: { title: string; label: string; description: string; href: string; mimetype: string };
+};
+
 // pages/audio.tsx
 export type AudioFormat = keyof typeof audioFormatDescriptions;
 
@@ -94,3 +99,35 @@ export type DimensionStrategy = keyof typeof dimensionStrategyDescriptions;
 export type PDFFile = { id: string; file: File };
 
 export type PDFSelections = FileSelections<string, { id: string; pdfIndex: number; range: string }>;
+
+// pages/zip.tsx
+export type FileToProcess = {
+  file: File;
+  isZip: boolean;
+  extractTo?: string;
+  include?: string;
+};
+
+export type ZipEntry = {
+  name: string;
+  input: ReadableStream<Uint8Array> | Uint8Array | Blob;
+  lastModified?: Date;
+};
+
+export type ZipFile = {
+  id: string;
+  file: File;
+  name: string;
+  size: number;
+  isZip: boolean;
+};
+
+export type ZipSelections = FileSelections<
+  string,
+  {
+    id: string;
+    fileIndex: number;
+    extractTo?: string;
+    include?: string;
+  }
+>;
