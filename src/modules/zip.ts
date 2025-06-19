@@ -17,11 +17,16 @@ function resolveNameCollision(name: string, existingNames: Set<string>): string 
   const firstPart = pathParts[0];
   const restParts = pathParts.slice(1);
 
+  let extensionIndex = firstPart.lastIndexOf(".");
+  if (extensionIndex === -1) extensionIndex = firstPart.length;
+  const baseName = firstPart.slice(0, extensionIndex);
+  const extension = firstPart.slice(extensionIndex);
+
   let counter = 1;
   let fullPath: string;
 
   do {
-    fullPath = [`${firstPart} (${counter})`, ...restParts].join("/");
+    fullPath = [`${baseName} (${counter})${extension}`, ...restParts].join("/");
     counter++;
   } while (existingNames.has(fullPath));
 
