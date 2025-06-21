@@ -1,5 +1,5 @@
 import { sizes } from "../constants";
-import { Unit } from "../types";
+import { Constraint, Unit } from "../types";
 
 const { KB, MB, GB } = sizes;
 
@@ -8,8 +8,6 @@ export const bytesToUnit = (bytes: number): Unit => (bytes >= GB ? "GB" : bytes 
 export const bytesToSize = (bytes: number, unit: Unit) => bytes / sizes[unit];
 
 export const calcSize = (files: Pick<File, "size">[]) => files.reduce((acc, file) => acc + file.size, 0);
-
-export const clamp = (value: number, min: number, max: number): number => Math.min(Math.max(value, min), max);
 
 export function download(url: string, name: string) {
   const link = document.createElement("a");
@@ -26,5 +24,7 @@ export function formatFileSize(bytes: number) {
 export const generateId = () => crypto.randomUUID();
 
 export const minmax = (a: number, b: number, useMin: boolean) => (useMin ? Math.min(a, b) : Math.max(a, b));
+
+export const normalize = (value: string, { min, max = Infinity }: Constraint, defaultValue?: number) => (value ? Math.min(Math.max(+value, min), max) : defaultValue);
 
 export const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);

@@ -23,7 +23,7 @@ export default function FileDropZone({ tool, Icon, handleFileChange, totalSize }
         >
           <div className="flex flex-col items-center justify-center pt-5 pb-6">
             <Icon className="w-8 h-8 text-slate-500 dark:text-slate-400 mb-3 scale-90" />
-            <p className="mb-2 text-sm text-slate-500 dark:text-slate-400">
+            <p className="mb-2 text-sm text-center text-balance text-slate-500 dark:text-slate-400">
               <span className="font-semibold">Click to upload</span> or drag and drop
             </p>
             <p className="text-xs text-slate-500 dark:text-slate-400">Select multiple {tool} files</p>

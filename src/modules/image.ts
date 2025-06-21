@@ -1,21 +1,49 @@
 import { ImageSelections, LoadedImage, ProcessedImage } from "@/types";
 import { generateId } from "./utils";
 
-export function cropImage(image: HTMLImageElement, { x, y, width, height }: PartialAdvancedSelection<ImageSelections>): ProcessedImage {
-  if (x ?? y ?? width ?? height) {
-    const canvas = document.createElement("canvas");
-    const cropX = Math.max(0, Math.min(x ?? 0, image.width));
-    const cropY = Math.max(0, Math.min(y ?? 0, image.height));
-    const cropWidth = Math.max(1, Math.min(width ?? image.width, image.width - cropX));
-    const cropHeight = Math.max(1, Math.min(height ?? image.height, image.height - cropY));
+export function processAdvancedImage(image: HTMLImageElement, selection: AdvancedSelection<ImageSelections>): ProcessedImage {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Unable to create canvas context");
 
-    canvas.width = cropWidth;
-    canvas.height = cropHeight;
-    const ctx = canvas.getContext("2d");
-    ctx?.drawImage(image, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
-    return { element: canvas, width: canvas.width, height: canvas.height };
+  switch (selection.transformOption) {
+    case "resize": {
+      const scale = selection.scaleFactor ?? 1;
+      const newWidth = Math.round(image.width * scale);
+      const newHeight = Math.round(image.height * scale);
+      canvas.width = newWidth;
+      canvas.height = newHeight;
+      ctx.drawImage(image, 0, 0, newWidth, newHeight);
+      break;
+    }
+    case "stretch": {
+      const newWidth = selection.targetWidth ?? image.width;
+      const newHeight = selection.targetHeight ?? image.height;
+      canvas.width = newWidth;
+      canvas.height = newHeight;
+      ctx.drawImage(image, 0, 0, newWidth, newHeight);
+      break;
+    }
+    case "crop": {
+      const cropX = Math.max(0, Math.min(selection.cropX ?? 0, image.width));
+      const cropY = Math.max(0, Math.min(selection.cropY ?? 0, image.height));
+      const cropWidth = Math.max(1, selection.cropWidth ?? image.width - cropX);
+      const cropHeight = Math.max(1, selection.cropHeight ?? image.height - cropY);
+
+      canvas.width = cropWidth;
+      canvas.height = cropHeight;
+
+      if (selection.fillColor) {
+        ctx.fillStyle = selection.fillColor;
+        ctx.fillRect(0, 0, cropWidth, cropHeight);
+      }
+
+      ctx.drawImage(image, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+      break;
+    }
   }
-  return { element: image, width: image.width, height: image.height };
+
+  return { element: canvas, width: canvas.width, height: canvas.height };
 }
 
 function loadImage(file: File) {

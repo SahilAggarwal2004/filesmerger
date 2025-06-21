@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import { imageFormatDescriptions, mergeDirections, sizes, dimensionStrategyDescriptions, modes, tools, audioFormatDescriptions } from "./constants";
+import { imageFormatDescriptions, mergeDirections, sizes, dimensionStrategyDescriptions, modes, tools, audioFormatDescriptions, transformOptionDescriptions } from "./constants";
 
 declare global {
   type Mode = (typeof modes)[number];
   type FileSelections<S = unknown, A = unknown> = { [key in Mode]: key extends "simple" ? Record<string, S> : Array<A> };
-  type PartialSimpleSelection<T extends FileSelections> = Partial<T["simple"][string]>;
-  type PartialAdvancedSelection<T extends FileSelections> = Partial<T["advanced"][number]>;
+  type SimpleSelection<T extends FileSelections> = T["simple"][string];
+  type AdvancedSelection<T extends FileSelections> = T["advanced"][number];
 
   interface Window {
     webkitAudioContext?: typeof AudioContext;
@@ -29,6 +29,10 @@ export type FileDropZoneProps = {
 };
 
 // constants.ts
+export type Constraint = { min: number; max?: number; step: number };
+
+export type Constraints = { [key: string]: Constraint };
+
 export type Tools = {
   [key: string]: { title: string; label: string; description: string; href: string; mimetype: string };
 };
@@ -36,16 +40,17 @@ export type Tools = {
 // pages/audio.tsx
 export type AudioFormat = keyof typeof audioFormatDescriptions;
 
-export type AudioSegment = { buffer: AudioBuffer; startTime: number; volume: number };
+export type AudioSegment = { buffer: AudioBuffer; startTime: number; volume?: number };
 
 export type AudioSelections = FileSelections<
-  { range: string; volume: number },
+  { range?: string; volume?: number; rate?: number },
   {
     id: string;
     audioIndex: number;
-    range: string;
+    range?: string;
     startAt?: number;
     volume?: number;
+    rate?: number;
   }
 >;
 
@@ -59,6 +64,8 @@ export type LoadedAudio = {
 };
 
 // pages/image.tsx
+export type DimensionStrategy = keyof typeof dimensionStrategyDescriptions;
+
 export type ImageFormat = keyof typeof imageFormatDescriptions;
 
 export type ImageSelections = FileSelections<
@@ -66,10 +73,15 @@ export type ImageSelections = FileSelections<
   {
     id: string;
     imageIndex: number;
-    x?: number;
-    y?: number;
-    width?: number;
-    height?: number;
+    transformOption: TransformOption;
+    scaleFactor?: number;
+    targetWidth?: number;
+    targetHeight?: number;
+    cropX?: number;
+    cropY?: number;
+    cropWidth?: number;
+    cropHeight?: number;
+    fillColor?: string;
   }
 >;
 
@@ -91,14 +103,14 @@ export type ProcessedImage = {
   height: number;
 };
 
-export type Unit = keyof typeof sizes;
+export type TransformOption = keyof typeof transformOptionDescriptions;
 
-export type DimensionStrategy = keyof typeof dimensionStrategyDescriptions;
+export type Unit = keyof typeof sizes;
 
 // pages/pdf.tsx
 export type PDFFile = { id: string; file: File };
 
-export type PDFSelections = FileSelections<string, { id: string; pdfIndex: number; range: string }>;
+export type PDFSelections = FileSelections<string, { id: string; pdfIndex: number; range?: string }>;
 
 // pages/zip.tsx
 export type FileToProcess = {

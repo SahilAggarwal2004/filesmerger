@@ -1,6 +1,37 @@
 import { LoadedAudio, AudioFormat, AudioSegment } from "@/types";
 import { generateId } from "./utils";
 
+async function audioBufferToMp3(buffer: AudioBuffer, bitrateValue: number) {
+  const numberOfChannels = Math.min(buffer.numberOfChannels, 2);
+  const sampleRate = buffer.sampleRate;
+  const length = buffer.length;
+
+  const channelData: Float32Array[] = [];
+  for (let i = 0; i < numberOfChannels; i++) channelData.push(buffer.getChannelData(i));
+
+  return new Promise<ArrayBuffer>((resolve, reject) => {
+    const worker = new Worker(new URL("../workers/lame.ts", import.meta.url));
+
+    worker.onmessage = (e) => {
+      resolve(e.data);
+      worker.terminate();
+    };
+
+    worker.onerror = (err) => {
+      reject(err);
+      worker.terminate();
+    };
+
+    worker.postMessage({
+      channelData: channelData.map((c) => Array.from(c)),
+      sampleRate,
+      numberOfChannels,
+      length,
+      bitrateValue,
+    });
+  });
+}
+
 function audioBufferToWav(buffer: AudioBuffer) {
   const length = buffer.length;
   const numberOfChannels = buffer.numberOfChannels;
@@ -45,35 +76,27 @@ function audioBufferToWav(buffer: AudioBuffer) {
   return arrayBuffer;
 }
 
-async function audioBufferToMp3(buffer: AudioBuffer, bitrateValue: number) {
-  const numberOfChannels = Math.min(buffer.numberOfChannels, 2);
-  const sampleRate = buffer.sampleRate;
-  const length = buffer.length;
+function changeAudioRate(ctx: AudioContext, buffer: AudioBuffer, rate: number) {
+  const originalLength = buffer.length;
+  const newLength = Math.floor(originalLength / rate);
+  const numberOfChannels = buffer.numberOfChannels;
+  const newBuffer = ctx.createBuffer(numberOfChannels, newLength, buffer.sampleRate);
 
-  const channelData: Float32Array[] = [];
-  for (let i = 0; i < numberOfChannels; i++) channelData.push(buffer.getChannelData(i));
+  for (let channel = 0; channel < numberOfChannels; channel++) {
+    const originalData = buffer.getChannelData(channel);
+    const newData = newBuffer.getChannelData(channel);
+    for (let i = 0; i < newLength; i++) {
+      const originalIndex = i * rate;
+      const floorIndex = Math.floor(originalIndex);
+      const ceilIndex = Math.min(floorIndex + 1, originalLength - 1);
+      const fraction = originalIndex - floorIndex;
+      const sample1 = originalData[floorIndex] || 0;
+      const sample2 = originalData[ceilIndex] || 0;
+      newData[i] = sample1 + (sample2 - sample1) * fraction;
+    }
+  }
 
-  return new Promise<ArrayBuffer>((resolve, reject) => {
-    const worker = new Worker(new URL("../workers/lame.ts", import.meta.url));
-
-    worker.onmessage = (e) => {
-      resolve(e.data);
-      worker.terminate();
-    };
-
-    worker.onerror = (err) => {
-      reject(err);
-      worker.terminate();
-    };
-
-    worker.postMessage({
-      channelData: channelData.map((c) => Array.from(c)),
-      sampleRate,
-      numberOfChannels,
-      length,
-      bitrateValue,
-    });
-  });
+  return newBuffer;
 }
 
 export function combineAudioBuffers(ctx: AudioContext, segments: AudioSegment[]) {
@@ -86,7 +109,7 @@ export function combineAudioBuffers(ctx: AudioContext, segments: AudioSegment[])
 
   for (let channel = 0; channel < numberOfChannels; channel++) {
     const combinedData = combinedBuffer.getChannelData(channel);
-    segments.forEach(({ buffer, startTime, volume }) => {
+    segments.forEach(({ buffer, startTime, volume = 1 }) => {
       const channelData = buffer.getChannelData(Math.min(channel, buffer.numberOfChannels - 1));
       const startSample = Math.floor(startTime * sampleRate);
       for (let i = 0; i < buffer.length; i++) {
@@ -124,9 +147,14 @@ function loadAudio(file: File) {
   });
 }
 
-export async function loadAudioBuffer(ctx: AudioContext, file: File) {
+export async function loadAudioBuffer(ctx: AudioContext, loadedAudio: LoadedAudio, range: string = "", rate: number = 1) {
+  const { duration, file } = loadedAudio;
+  const { start, end } = parseTimeRange(range, duration);
   const arrayBuffer = await file.arrayBuffer();
-  return await ctx.decodeAudioData(arrayBuffer);
+  let buffer = await ctx.decodeAudioData(arrayBuffer);
+  if (start !== 0 || end !== duration) buffer = trimAudioBuffer(ctx, buffer, start, end);
+  if (rate !== 1) buffer = changeAudioRate(ctx, buffer, rate);
+  return buffer;
 }
 
 export async function loadAudios(files: FileList) {
@@ -134,7 +162,7 @@ export async function loadAudios(files: FileList) {
   return await Promise.all(audioPromises);
 }
 
-export function parseTimeRange(range: string, duration: number) {
+function parseTimeRange(range: string, duration: number) {
   if (!range.trim()) return { start: 0, end: duration };
   try {
     const parts = range.split("-").map((p) => p.trim());
@@ -147,7 +175,7 @@ export function parseTimeRange(range: string, duration: number) {
   }
 }
 
-export function trimAudioBuffer(ctx: AudioContext, buffer: AudioBuffer, start: number, end: number) {
+function trimAudioBuffer(ctx: AudioContext, buffer: AudioBuffer, start: number, end: number) {
   const startSample = Math.floor(start * buffer.sampleRate);
   const endSample = Math.floor(end * buffer.sampleRate);
   const length = endSample - startSample;

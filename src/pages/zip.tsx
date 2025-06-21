@@ -20,7 +20,7 @@ export default function ZipMerger() {
 
   const totalSize = useMemo(() => calcSize(zipFiles.map(({ file }) => file)), [zipFiles]);
 
-  const handleAdvancedUpdate = (id: string, update: Partial<ZipSelections["advanced"][number]>) =>
+  const handleAdvancedUpdate = (id: string, update: Partial<AdvancedSelection<ZipSelections>>) =>
     setAdvancedSelections((prev) => prev.map((sel) => (sel.id === id ? { ...sel, ...update } : sel)));
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -40,6 +40,11 @@ export default function ZipMerger() {
       setIsDownloadComplete(false);
     }
     event.target.value = "";
+  }
+
+  function removeFile(id: string) {
+    setZipFiles((prev) => prev.filter((file) => file.id !== id));
+    setAdvancedSelections([]);
   }
 
   async function handleMerge() {
@@ -135,8 +140,8 @@ export default function ZipMerger() {
                           }}
                         >
                           {zipFiles.map(({ id, name, size, isZip }) => (
-                            <div key={id} className="flex items-center py-2 border rounded-xl shadow-sm text-sm">
-                              <ReorderIcon className="w-5 mx-1 shrink-0" />
+                            <div key={id} className="flex items-start py-2 border rounded-xl shadow-sm text-sm">
+                              <ReorderIcon className="w-5 mt-2 mx-1.5 shrink-0" />
                               <div className="flex gap-2 grow flex-col xs:flex-row justify-center">
                                 <div className="flex gap-2 items-center xs:w-1/2">
                                   <div className="flex-1">
@@ -157,7 +162,7 @@ export default function ZipMerger() {
                                   className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white grow"
                                 />
                               </div>
-                              <button onClick={() => setZipFiles((prev) => prev.filter((file) => file.id !== id))} className="text-red-500 hover:text-red-700 w-5 mx-1 shrink-0">
+                              <button onClick={() => removeFile(id)} className="text-red-500 hover:text-red-700 w-5 mt-2 mx-1.5 shrink-0">
                                 ✕
                               </button>
                             </div>
@@ -179,9 +184,9 @@ export default function ZipMerger() {
                             setAdvancedSelections(reorderedSelections);
                           }}
                         >
-                          {advancedSelections.map(({ id, fileIndex, extractTo, include }) => (
-                            <div key={id} className="flex items-center py-2 border rounded-xl shadow-sm text-sm">
-                              <ReorderIcon className="w-5 mx-1 shrink-0" />
+                          {advancedSelections.map(({ id, fileIndex, extractTo = "", include = "" }) => (
+                            <div key={id} className="flex items-start py-2 border rounded-xl shadow-sm text-sm">
+                              <ReorderIcon className="w-5 mt-2 mx-1.5 shrink-0" />
                               <div className="flex gap-2 grow flex-col justify-center">
                                 <select
                                   value={fileIndex}
@@ -198,7 +203,7 @@ export default function ZipMerger() {
                                   <input
                                     type="text"
                                     placeholder="Folder path (optional)"
-                                    value={extractTo || ""}
+                                    value={extractTo}
                                     onChange={(e) => handleAdvancedUpdate(id, { extractTo: e.target.value })}
                                     className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
                                   />
@@ -206,7 +211,7 @@ export default function ZipMerger() {
                                     type="text"
                                     disabled={!zipFiles[fileIndex].isZip}
                                     placeholder="Include pattern (e.g. *.txt,*.png)"
-                                    value={include || ""}
+                                    value={include}
                                     onChange={(e) => handleAdvancedUpdate(id, { include: e.target.value })}
                                     className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white disabled:cursor-not-allowed"
                                   />
@@ -214,7 +219,7 @@ export default function ZipMerger() {
                               </div>
                               <button
                                 onClick={() => setAdvancedSelections((prev) => prev.filter((sel) => sel.id !== id))}
-                                className="text-red-500 hover:text-red-700 w-5 mx-1 shrink-0"
+                                className="text-red-500 hover:text-red-700 w-5 mt-2 mx-1.5 shrink-0"
                               >
                                 ✕
                               </button>
@@ -233,14 +238,12 @@ export default function ZipMerger() {
                               {
                                 id: generateId(),
                                 fileIndex: 0,
-                                extractTo: "",
-                                include: "",
                               },
                             ])
                           }
                           className="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg shadow text-sm"
                         >
-                          + Add Selection
+                          + Add ZIP Selection
                         </button>
                       </div>
                     )}

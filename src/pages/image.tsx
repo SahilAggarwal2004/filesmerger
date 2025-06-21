@@ -5,11 +5,24 @@ import { useState, useEffect, useMemo, isValidElement } from "react";
 import { BsImages } from "react-icons/bs";
 import ReorderList, { ReorderIcon } from "react-reorder-list";
 
-import { imageFormatDescriptions, imageFormats, mergeDirections, dimensionStrategies, dimensionStrategyDescriptions, modes } from "@/constants";
-import { cropImage, loadImages } from "@/modules/image";
-import { calcSize, download, formatFileSize, minmax, sum, generateId } from "@/modules/utils";
-import { ImageFormat, LoadedImage, MergedImage, MergeDirection, DimensionStrategy, ImageSelections, ProcessedImage } from "@/types";
+import {
+  imageFormatDescriptions,
+  imageFormats,
+  mergeDirections,
+  dimensionStrategies,
+  dimensionStrategyDescriptions,
+  modes,
+  transformOptions,
+  transformOptionDescriptions,
+  constraints,
+} from "@/constants";
+import { loadImages, processAdvancedImage } from "@/modules/image";
+import { calcSize, download, formatFileSize, minmax, sum, generateId, normalize } from "@/modules/utils";
+import { ImageFormat, LoadedImage, MergedImage, MergeDirection, DimensionStrategy, ImageSelections, ProcessedImage, TransformOption } from "@/types";
 import FileDropZone from "@/components/FileDropZone";
+
+const { scaleConstraints, targetWidthConstraints, targetHeightConstraints, cropXConstraints, cropYConstraints, cropWidthConstraints, cropHeightConstraints, qualityConstraints } =
+  constraints;
 
 export default function ImageMerger() {
   const [loadedImages, setLoadedImages] = useState<LoadedImage[]>([]);
@@ -25,7 +38,7 @@ export default function ImageMerger() {
   const totalSize = useMemo(() => calcSize(loadedImages), [loadedImages]);
   const isOriginal = dimensionStrategy === "original";
 
-  const handleAdvancedUpdate = (id: string, update: PartialAdvancedSelection<ImageSelections>) =>
+  const handleAdvancedUpdate = (id: string, update: Partial<AdvancedSelection<ImageSelections>>) =>
     setAdvancedSelections((prev) => prev.map((sel) => (sel.id === id ? { ...sel, ...update } : sel)));
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -37,6 +50,11 @@ export default function ImageMerger() {
     event.target.value = "";
   }
 
+  function removeFile(id: string) {
+    setLoadedImages((prev) => prev.filter((file) => file.id !== id));
+    setAdvancedSelections([]);
+  }
+
   function mergeImages() {
     const canvas = document.createElement("canvas");
     const isHorizontal = mergeDirection === "horizontal";
@@ -45,14 +63,7 @@ export default function ImageMerger() {
     let processedImages: ProcessedImage[];
 
     if (selectedMode === "simple") processedImages = loadedImages.map(({ element }) => ({ element, width: element.width, height: element.height }));
-    else
-      processedImages = advancedSelections
-        .map((selection) => ({
-          element: loadedImages[selection.imageIndex]?.element,
-          cropOptions: selection,
-        }))
-        .filter(({ element }) => element)
-        .map(({ element, cropOptions }) => cropImage(element, cropOptions));
+    else processedImages = advancedSelections.map((selection) => processAdvancedImage(loadedImages[selection.imageIndex].element, selection)).filter((image) => image !== null);
 
     if (!processedImages.length) return;
 
@@ -164,7 +175,7 @@ export default function ImageMerger() {
                           <div key={id} className="relative group">
                             <ReorderIcon className="absolute top-1 left-1 z-10 cursor-grab rounded-full scale-90 p-1 shadow bg-white/50 dark:bg-slate-900/50" />
                             <button
-                              onClick={() => setLoadedImages((prev) => prev.filter((file) => file.id !== id))}
+                              onClick={() => removeFile(id)}
                               className="absolute top-1.5 right-1 z-10 text-red-500 hover:text-red-700 rounded-full w-6 h-6 flex items-center justify-center shadow bg-white/50 dark:bg-slate-900/50"
                               aria-label="Remove image"
                             >
@@ -195,72 +206,157 @@ export default function ImageMerger() {
                           setAdvancedSelections(reorderedSelections);
                         }}
                       >
-                        {advancedSelections.map((selection) => (
-                          <div key={selection.id} className="flex items-center py-2 border rounded-xl shadow-sm">
-                            <ReorderIcon className="w-5 mx-1 shrink-0" />
-                            <div className="flex gap-2 grow flex-col justify-center">
-                              <select
-                                value={selection.imageIndex}
-                                onChange={(e) => handleAdvancedUpdate(selection.id, { imageIndex: +e.target.value })}
-                                className="flex-1 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
-                              >
-                                {loadedImages.map(({ name }, i) => (
-                                  <option key={i} value={i}>
-                                    {name}
-                                  </option>
-                                ))}
-                              </select>
-                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                <input
-                                  type="number"
-                                  placeholder="X (px)"
-                                  value={selection.x ?? ""}
-                                  onChange={(e) => handleAdvancedUpdate(selection.id, { x: e.target.value ? +e.target.value : undefined })}
-                                  className="p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
-                                  min={0}
-                                />
-                                <input
-                                  type="number"
-                                  placeholder="Y (px)"
-                                  value={selection.y ?? ""}
-                                  onChange={(e) => handleAdvancedUpdate(selection.id, { y: e.target.value ? +e.target.value : undefined })}
-                                  className="p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
-                                  min={0}
-                                />
-                                <input
-                                  type="number"
-                                  placeholder="Width (px)"
-                                  value={selection.width ?? ""}
-                                  onChange={(e) => handleAdvancedUpdate(selection.id, { width: e.target.value ? +e.target.value : undefined })}
-                                  className="p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
-                                  min={1}
-                                />
-                                <input
-                                  type="number"
-                                  placeholder="Height (px)"
-                                  value={selection.height ?? ""}
-                                  onChange={(e) => handleAdvancedUpdate(selection.id, { height: e.target.value ? +e.target.value : undefined })}
-                                  className="p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
-                                  min={1}
-                                />
+                        {advancedSelections.map(({ id, imageIndex, transformOption, fillColor }) => {
+                          const { element } = loadedImages[imageIndex];
+
+                          return (
+                            <div key={id} className="flex items-start py-2 border rounded-xl shadow-sm text-sm">
+                              <ReorderIcon className="w-5 mt-2 mx-1.5 shrink-0" />
+                              <div className="flex-1 space-y-3">
+                                <div>
+                                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Select Image</label>
+                                  <select
+                                    value={imageIndex}
+                                    onChange={(e) => handleAdvancedUpdate(id, { imageIndex: +e.target.value })}
+                                    className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
+                                  >
+                                    {loadedImages.map(({ name }, i) => (
+                                      <option key={i} value={i}>
+                                        {name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                    Original: {element.width}×{element.height}px
+                                  </p>
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Transform Method</label>
+                                  <select
+                                    value={transformOption}
+                                    onChange={(e) => handleAdvancedUpdate(id, { transformOption: e.target.value as TransformOption })}
+                                    className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
+                                  >
+                                    {transformOptions.map((option) => (
+                                      <option key={option} value={option}>
+                                        {transformOptionDescriptions[option]}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                {transformOption === "resize" && (
+                                  <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Scale Factor</label>
+                                    <input
+                                      type="number"
+                                      {...scaleConstraints}
+                                      placeholder={`1 (${scaleConstraints.min} - ${scaleConstraints.max})`}
+                                      onChange={(e) => handleAdvancedUpdate(id, { scaleFactor: normalize(e.target.value, scaleConstraints, 1) })}
+                                      className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
+                                    />
+                                  </div>
+                                )}
+
+                                {transformOption === "stretch" && (
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Target Width (px)</label>
+                                      <input
+                                        type="number"
+                                        {...targetWidthConstraints}
+                                        placeholder={element.width.toString()}
+                                        onChange={(e) => handleAdvancedUpdate(id, { targetWidth: normalize(e.target.value, targetWidthConstraints) })}
+                                        className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Target Height (px)</label>
+                                      <input
+                                        type="number"
+                                        {...targetHeightConstraints}
+                                        placeholder={element.height.toString()}
+                                        onChange={(e) => handleAdvancedUpdate(id, { targetHeight: normalize(e.target.value, targetHeightConstraints) })}
+                                        className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
+                                      />
+                                    </div>
+                                  </div>
+                                )}
+
+                                {transformOption === "crop" && (
+                                  <div className="space-y-3">
+                                    <div className="grid grid-cols-2 gap-3">
+                                      <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Crop Start X (px)</label>
+                                        <input
+                                          type="number"
+                                          {...cropXConstraints}
+                                          placeholder="0"
+                                          onChange={(e) => handleAdvancedUpdate(id, { cropX: normalize(e.target.value, cropXConstraints) })}
+                                          className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Crop Start Y (px)</label>
+                                        <input
+                                          type="number"
+                                          {...cropYConstraints}
+                                          placeholder="0"
+                                          onChange={(e) => handleAdvancedUpdate(id, { cropY: normalize(e.target.value, cropYConstraints) })}
+                                          className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
+                                        />
+                                      </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                      <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Crop Width (px)</label>
+                                        <input
+                                          type="number"
+                                          {...cropWidthConstraints}
+                                          placeholder={element.width.toString()}
+                                          onChange={(e) => handleAdvancedUpdate(id, { cropWidth: normalize(e.target.value, cropWidthConstraints) })}
+                                          className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Crop Height (px)</label>
+                                        <input
+                                          type="number"
+                                          {...cropHeightConstraints}
+                                          placeholder={element.height.toString()}
+                                          onChange={(e) => handleAdvancedUpdate(id, { cropHeight: normalize(e.target.value, cropHeightConstraints) })}
+                                          className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
+                                        />
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Fill Color</label>
+                                      <input
+                                        type="color"
+                                        value={fillColor}
+                                        onChange={(e) => handleAdvancedUpdate(id, { fillColor: e.target.value })}
+                                        className="h-8 w-16 rounded border border-slate-300 dark:border-slate-600"
+                                      />
+                                    </div>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                                      Leave crop dimensions empty to use full image. Fill color is used when crop area extends beyond image boundaries.
+                                    </p>
+                                  </div>
+                                )}
                               </div>
+                              <button
+                                onClick={() => setAdvancedSelections((prev) => prev.filter((sel) => sel.id !== id))}
+                                className="text-red-500 hover:text-red-700 w-5 mt-2 mx-1.5 shrink-0"
+                              >
+                                ✕
+                              </button>
                             </div>
-                            <button
-                              onClick={() => setAdvancedSelections((prev) => prev.filter((sel) => sel.id !== selection.id))}
-                              className="text-red-500 hover:text-red-700 w-5 mx-1 shrink-0"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </ReorderList>
-                      {advancedSelections.length > 0 && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400 italic">
-                          Leave crop fields empty to use the full image. X/Y specify the crop starting position, Width/Height specify the crop dimensions.
-                        </p>
-                      )}
                       <button
-                        onClick={() => setAdvancedSelections((prev) => [...prev, { id: generateId(), imageIndex: 0 }])}
+                        onClick={() => setAdvancedSelections((prev) => [...prev, { id: generateId(), imageIndex: 0, transformOption: "resize", fillColor: "#ffffff" }])}
                         className="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg shadow text-sm"
                       >
                         + Add Image Selection
@@ -336,11 +432,9 @@ export default function ImageMerger() {
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Quality: {quality}</label>
                       <input
                         type="range"
-                        min="0.1"
-                        max="1.0"
-                        step="0.1"
+                        {...qualityConstraints}
                         value={quality}
-                        onChange={(e) => setQuality(parseFloat(e.target.value))}
+                        onChange={(e) => setQuality(normalize(e.target.value, qualityConstraints)!)}
                         className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
                       />
                       <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-1">

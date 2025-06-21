@@ -1,6 +1,21 @@
-import type { ImageFormat, DimensionStrategy, AudioFormat, Tools } from "./types";
+import type { ImageFormat, DimensionStrategy, AudioFormat, Tools, Constraints, TransformOption } from "./types";
 
 // General
+export const constraints: Constraints = {
+  scaleConstraints: { min: 0.1, max: 10, step: 0.1 },
+  targetWidthConstraints: { min: 1, step: 1 },
+  targetHeightConstraints: { min: 1, step: 1 },
+  cropXConstraints: { min: 0, step: 1 },
+  cropYConstraints: { min: 0, step: 1 },
+  cropWidthConstraints: { min: 1, step: 1 },
+  cropHeightConstraints: { min: 1, step: 1 },
+  qualityConstraints: { min: 0.1, max: 1, step: 0.1 },
+  volumeConstraints: { min: 0, max: 2, step: 0.1 },
+  rateConstraints: { min: 0.25, max: 3, step: 0.05 },
+  startAtConstraints: { min: 0, step: 0.1 },
+  bitrateConstraints: { min: 64, max: 320, step: 32 },
+};
+
 export const modes = ["simple", "advanced"] as const;
 
 export const sizes = { B: 1, KB: 1024, MB: 1048576, GB: 1073741824 }; // In bytes
@@ -54,6 +69,14 @@ export const imageFormatDescriptions = {
 export const imageFormats = Object.keys(imageFormatDescriptions) as ImageFormat[];
 
 export const mergeDirections = ["vertical", "horizontal"] as const;
+
+export const transformOptionDescriptions = {
+  resize: "Resize (Scale)",
+  stretch: "Stretch/Shrink",
+  crop: "Crop/Fill",
+};
+
+export const transformOptions = Object.keys(transformOptionDescriptions) as TransformOption[];
 
 // Audio
 export const audioFormatDescriptions = {

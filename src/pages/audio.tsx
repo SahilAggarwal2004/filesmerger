@@ -4,11 +4,13 @@ import { useState, useEffect, useMemo, isValidElement, useRef } from "react";
 import { BsMusicNoteBeamed, BsPauseFill, BsPlayFill } from "react-icons/bs";
 import ReorderList, { ReorderIcon } from "react-reorder-list";
 
-import { audioFormatDescriptions, audioFormats, modes } from "@/constants";
-import { calcSize, clamp, download, formatFileSize, generateId } from "@/modules/utils";
-import { LoadedAudio, AudioSelections, AudioFormat, AudioSegment } from "@/types";
 import FileDropZone from "@/components/FileDropZone";
-import { combineAudioBuffers, encodeToFormat, formatDuration, loadAudioBuffer, loadAudios, parseTimeRange, trimAudioBuffer } from "@/modules/audio";
+import { audioFormatDescriptions, audioFormats, constraints, modes } from "@/constants";
+import { combineAudioBuffers, encodeToFormat, formatDuration, loadAudioBuffer, loadAudios } from "@/modules/audio";
+import { calcSize, download, formatFileSize, generateId, normalize } from "@/modules/utils";
+import { LoadedAudio, AudioSelections, AudioFormat, AudioSegment } from "@/types";
+
+const { volumeConstraints, rateConstraints, startAtConstraints, bitrateConstraints } = constraints;
 
 export default function AudioMerger() {
   const [loadedAudios, setLoadedAudios] = useState<LoadedAudio[]>([]);
@@ -25,9 +27,9 @@ export default function AudioMerger() {
 
   const totalSize = useMemo(() => calcSize(loadedAudios), [loadedAudios]);
 
-  const handleSimpleUpdate = (id: string, update: PartialSimpleSelection<AudioSelections>) => setSimpleSelections((prev) => ({ ...prev, [id]: { ...prev[id], ...update } }));
+  const handleSimpleUpdate = (id: string, update: Partial<SimpleSelection<AudioSelections>>) => setSimpleSelections((prev) => ({ ...prev, [id]: { ...prev[id], ...update } }));
 
-  const handleAdvancedUpdate = (id: string, update: PartialAdvancedSelection<AudioSelections>) =>
+  const handleAdvancedUpdate = (id: string, update: Partial<AdvancedSelection<AudioSelections>>) =>
     setAdvancedSelections((prev) => prev.map((sel) => (sel.id === id ? { ...sel, ...update } : sel)));
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -37,6 +39,11 @@ export default function AudioMerger() {
       setMergedAudioUrl(null);
     }
     event.target.value = "";
+  }
+
+  function removeFile(id: string) {
+    setLoadedAudios((prev) => prev.filter((file) => file.id !== id));
+    setAdvancedSelections([]);
   }
 
   async function handleMerge() {
@@ -51,23 +58,16 @@ export default function AudioMerger() {
 
       if (selectedMode === "simple") {
         let currentTime = 0;
-        for (const { duration, file, id } of loadedAudios) {
-          const { range = "", volume = 1 } = simpleSelections[id] || {};
-          const { start, end } = parseTimeRange(range, duration);
-          const buffer = await loadAudioBuffer(audioContext, file);
-          const trimmedBuffer = start === 0 && end === duration ? buffer : trimAudioBuffer(audioContext, buffer, start, end);
-          segments.push({ buffer: trimmedBuffer, startTime: currentTime, volume });
-          currentTime += trimmedBuffer.duration;
+        for (const loadedAudio of loadedAudios) {
+          const { range, volume, rate } = simpleSelections[loadedAudio.id] || {};
+          const buffer = await loadAudioBuffer(audioContext, loadedAudio, range, rate);
+          segments.push({ buffer, startTime: currentTime, volume });
+          currentTime += buffer.duration;
         }
       } else
-        for (const { audioIndex, range, startAt = 0, volume = 1 } of advancedSelections) {
-          const loadedAudio = loadedAudios[audioIndex];
-          if (!loadedAudio) continue;
-          const { duration, file } = loadedAudio;
-          const { start, end } = parseTimeRange(range, duration);
-          const buffer = await loadAudioBuffer(audioContext, file);
-          const trimmedBuffer = start === 0 && end === duration ? buffer : trimAudioBuffer(audioContext, buffer, start, end);
-          segments.push({ buffer: trimmedBuffer, startTime: startAt, volume });
+        for (const { audioIndex, range, startAt = 0, volume, rate } of advancedSelections) {
+          const buffer = await loadAudioBuffer(audioContext, loadedAudios[audioIndex], range, rate);
+          segments.push({ buffer, startTime: startAt, volume });
         }
 
       const combinedBuffer = combineAudioBuffers(audioContext, segments);
@@ -178,8 +178,8 @@ export default function AudioMerger() {
                           }}
                         >
                           {loadedAudios.map(({ duration, id, name, size, url }) => (
-                            <div key={id} className="flex items-center py-2 border rounded-xl shadow-sm text-sm">
-                              <ReorderIcon className="w-5 mx-1 shrink-0" />
+                            <div key={id} className="flex items-start py-2 border rounded-xl shadow-sm text-sm">
+                              <ReorderIcon className="w-5 mt-2 mx-1.5 shrink-0" />
                               <div className="flex gap-2 grow flex-col justify-center">
                                 <div className="flex gap-2 grow items-center">
                                   <button
@@ -195,7 +195,7 @@ export default function AudioMerger() {
                                     </div>
                                   </div>
                                 </div>
-                                <div className="grid grid-cols-1 gap-2 xs:grid-cols-2">
+                                <div className="grid grid-cols-1 gap-2 xs:grid-cols-3">
                                   <input
                                     type="text"
                                     placeholder="Range (e.g. 5-30.2)"
@@ -205,26 +205,29 @@ export default function AudioMerger() {
                                   />
                                   <input
                                     type="number"
-                                    placeholder="Volume (0-2)"
-                                    value={simpleSelections[id]?.volume ?? ""}
-                                    onChange={(e) => handleSimpleUpdate(id, { volume: clamp(+e.target.value, 0, 2) })}
+                                    {...volumeConstraints}
+                                    placeholder={`Volume (${volumeConstraints.min}-${volumeConstraints.max})`}
+                                    onChange={(e) => handleSimpleUpdate(id, { volume: normalize(e.target.value, volumeConstraints, 1) })}
                                     className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
-                                    min={0}
-                                    max={2}
-                                    step={0.1}
+                                  />
+                                  <input
+                                    type="number"
+                                    {...rateConstraints}
+                                    placeholder={`Rate (${rateConstraints.min}-${rateConstraints.max})`}
+                                    onChange={(e) => handleSimpleUpdate(id, { rate: normalize(e.target.value, rateConstraints, 1) })}
+                                    className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
                                   />
                                 </div>
                               </div>
-                              <button
-                                onClick={() => setLoadedAudios((prev) => prev.filter((file) => file.id !== id))}
-                                className="text-red-500 hover:text-red-700 w-5 mx-1 shrink-0"
-                              >
+                              <button onClick={() => removeFile(id)} className="text-red-500 hover:text-red-700 w-5 mt-2 mx-1.5 shrink-0">
                                 ✕
                               </button>
                             </div>
                           ))}
                         </ReorderList>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 italic mt-1">Leave the range blank to include the entire audio. Set the volume (1.0 is normal).</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 italic mt-1">
+                          Leave the range blank to include the entire audio. Set the volume (1.0 is normal) and rate (1.0 is normal).
+                        </p>
                       </div>
                     ) : (
                       <div className="space-y-4">
@@ -238,13 +241,13 @@ export default function AudioMerger() {
                             setAdvancedSelections(reorderedSelections);
                           }}
                         >
-                          {advancedSelections.map((selection) => (
-                            <div key={selection.id} className="flex items-center py-2 border rounded-xl shadow-sm text-sm">
-                              <ReorderIcon className="w-5 mx-1 shrink-0" />
+                          {advancedSelections.map(({ id, audioIndex, range = "" }) => (
+                            <div key={id} className="flex items-start py-2 border rounded-xl shadow-sm text-sm">
+                              <ReorderIcon className="w-5 mt-2 mx-1.5 shrink-0" />
                               <div className="flex gap-2 grow flex-col justify-center">
                                 <select
-                                  value={selection.audioIndex}
-                                  onChange={(e) => handleAdvancedUpdate(selection.id, { audioIndex: +e.target.value })}
+                                  value={audioIndex}
+                                  onChange={(e) => handleAdvancedUpdate(id, { audioIndex: +e.target.value })}
                                   className="flex-1 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
                                 >
                                   {loadedAudios.map(({ name }, i) => (
@@ -253,38 +256,40 @@ export default function AudioMerger() {
                                     </option>
                                   ))}
                                 </select>
-                                <div className="grid grid-cols-1 gap-2 xs:grid-cols-3">
+                                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                                   <input
                                     type="text"
                                     placeholder="Range (e.g. 5-30.2)"
-                                    value={selection.range}
-                                    onChange={(e) => handleAdvancedUpdate(selection.id, { range: e.target.value })}
+                                    value={range}
+                                    onChange={(e) => handleAdvancedUpdate(id, { range: e.target.value })}
                                     className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
                                   />
                                   <input
                                     type="number"
-                                    placeholder="Volume (0-2)"
-                                    value={selection.volume ?? ""}
-                                    onChange={(e) => handleAdvancedUpdate(selection.id, { volume: clamp(+e.target.value, 0, 2) })}
+                                    {...volumeConstraints}
+                                    placeholder={`Volume (${volumeConstraints.min}-${volumeConstraints.max})`}
+                                    onChange={(e) => handleAdvancedUpdate(id, { volume: normalize(e.target.value, volumeConstraints, 1) })}
                                     className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
-                                    min={0}
-                                    max={2}
-                                    step={0.1}
                                   />
                                   <input
                                     type="number"
+                                    {...rateConstraints}
+                                    placeholder={`Rate (${rateConstraints.min}-${rateConstraints.max})`}
+                                    onChange={(e) => handleAdvancedUpdate(id, { rate: normalize(e.target.value, rateConstraints, 1) })}
+                                    className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
+                                  />
+                                  <input
+                                    type="number"
+                                    {...startAtConstraints}
                                     placeholder="Start at (s)"
-                                    value={selection.startAt ?? ""}
-                                    onChange={(e) => handleAdvancedUpdate(selection.id, { startAt: +e.target.value })}
+                                    onChange={(e) => handleAdvancedUpdate(id, { startAt: normalize(e.target.value, startAtConstraints, 0) })}
                                     className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
-                                    step={0.1}
-                                    min={0}
                                   />
                                 </div>
                               </div>
                               <button
-                                onClick={() => setAdvancedSelections((prev) => prev.filter((sel) => sel.id !== selection.id))}
-                                className="text-red-500 hover:text-red-700 w-5 mx-1 shrink-0"
+                                onClick={() => setAdvancedSelections((prev) => prev.filter((sel) => sel.id !== id))}
+                                className="text-red-500 hover:text-red-700 w-5 mt-2 mx-1.5 shrink-0"
                               >
                                 ✕
                               </button>
@@ -293,24 +298,15 @@ export default function AudioMerger() {
                         </ReorderList>
                         {advancedSelections.length > 0 && (
                           <p className="text-xs text-slate-500 dark:text-slate-400 italic">
-                            Leave the range empty for full audio. Set volume (1.0 = normal). Set &quot;Start at&quot; to specify when this audio should begin in the timeline (for
-                            overlapping).
+                            Leave the range empty for full audio. Set volume (1.0 is normal), rate (1.0 is normal). Set &quot;Start at&quot; to specify when this audio should begin
+                            in the timeline (for overlapping).
                           </p>
                         )}
                         <button
-                          onClick={() =>
-                            setAdvancedSelections((prev) => [
-                              ...prev,
-                              {
-                                id: generateId(),
-                                audioIndex: 0,
-                                range: "",
-                              },
-                            ])
-                          }
+                          onClick={() => setAdvancedSelections((prev) => [...prev, { id: generateId(), audioIndex: 0 }])}
                           className="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg shadow text-sm"
                         >
-                          + Add Range
+                          + Add Audio Selection
                         </button>
                       </div>
                     )}
@@ -338,16 +334,14 @@ export default function AudioMerger() {
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Bitrate: {bitrate} kbps</label>
                       <input
                         type="range"
-                        min={64}
-                        max={320}
-                        step={32}
+                        {...bitrateConstraints}
                         value={bitrate}
                         onChange={(e) => setBitrate(+e.target.value)}
                         className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
                       />
                       <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        <span>64 kbps</span>
-                        <span>320 kbps</span>
+                        <span>{bitrateConstraints.min} kbps</span>
+                        <span>{bitrateConstraints.max} kbps</span>
                       </div>
                     </div>
                   )}
