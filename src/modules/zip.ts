@@ -45,7 +45,7 @@ function matchesPattern(fileName: string, pattern: string): boolean {
   });
 }
 
-async function processZipFile(file: File, extractTo: string, include: string, existingNames: Set<string>) {
+async function processZipFile(file: File, extractTo: string = "", include: string = "", existingNames: Set<string>) {
   const zipEntries: ZipEntry[] = [];
   const { entries } = await unzip(file);
   for (const [name, entry] of Object.entries(entries)) {
@@ -59,7 +59,7 @@ async function processZipFile(file: File, extractTo: string, include: string, ex
   return zipEntries;
 }
 
-async function processRegularFile(file: File, extractTo: string, existingNames: Set<string>): Promise<ZipEntry> {
+async function processRegularFile(file: File, extractTo: string = "", existingNames: Set<string>): Promise<ZipEntry> {
   const fileName = extractTo ? `${extractTo}/${file.name}` : file.name;
   const resolvedName = resolveNameCollision(fileName, existingNames);
   return { name: resolvedName, input: file, lastModified: new Date(file.lastModified) };
@@ -71,7 +71,7 @@ export async function mergeZips(filesToProcess: FileToProcess[], onProgress: (cu
   const total = filesToProcess.length;
 
   for (let i = 0; i < total; i++) {
-    const { file, extractTo = "", include = "" } = filesToProcess[i];
+    const { file, extractTo, include } = filesToProcess[i];
     try {
       const isZip = file.type === "application/zip" || file.name.toLowerCase().endsWith(".zip");
       if (isZip) {

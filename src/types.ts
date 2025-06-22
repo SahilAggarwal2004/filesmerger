@@ -1,5 +1,15 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import { imageFormatDescriptions, mergeDirections, sizes, dimensionStrategyDescriptions, modes, tools, audioFormatDescriptions, transformOptionDescriptions } from "./constants";
+import {
+  imageFormatDescriptions,
+  mergeDirections,
+  sizes,
+  dimensionStrategyDescriptions,
+  modes,
+  tools,
+  audioFormatDescriptions,
+  transformOptionDescriptions,
+  rotationOptionDescriptions,
+} from "./constants";
 
 declare global {
   type Mode = (typeof modes)[number];
@@ -110,7 +120,9 @@ export type Unit = keyof typeof sizes;
 // pages/pdf.tsx
 export type PDFFile = { id: string; file: File };
 
-export type PDFSelections = FileSelections<string, { id: string; pdfIndex: number; range?: string }>;
+export type PDFSelections = FileSelections<{ range?: string; rotation: number }, { id: string; pdfIndex: number; range?: string; rotation: number }>;
+
+export type RotationOption = keyof typeof rotationOptionDescriptions;
 
 // pages/zip.tsx
 export type FileToProcess = {

@@ -207,6 +207,7 @@ export default function AudioMerger() {
                                     type="number"
                                     {...volumeConstraints}
                                     placeholder={`Volume (${volumeConstraints.min}-${volumeConstraints.max})`}
+                                    defaultValue={simpleSelections[id]?.volume ?? ""}
                                     onChange={(e) => handleSimpleUpdate(id, { volume: normalize(e.target.value, volumeConstraints, 1) })}
                                     className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
                                   />
@@ -214,6 +215,7 @@ export default function AudioMerger() {
                                     type="number"
                                     {...rateConstraints}
                                     placeholder={`Rate (${rateConstraints.min}-${rateConstraints.max})`}
+                                    defaultValue={simpleSelections[id]?.rate ?? ""}
                                     onChange={(e) => handleSimpleUpdate(id, { rate: normalize(e.target.value, rateConstraints, 1) })}
                                     className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
                                   />
@@ -241,7 +243,7 @@ export default function AudioMerger() {
                             setAdvancedSelections(reorderedSelections);
                           }}
                         >
-                          {advancedSelections.map(({ id, audioIndex, range = "" }) => (
+                          {advancedSelections.map(({ id, audioIndex, range = "", volume = "", rate = "", startAt = "" }) => (
                             <div key={id} className="flex items-start py-2 border rounded-xl shadow-sm text-sm">
                               <ReorderIcon className="w-5 mt-2 mx-1.5 shrink-0" />
                               <div className="flex gap-2 grow flex-col justify-center">
@@ -256,7 +258,7 @@ export default function AudioMerger() {
                                     </option>
                                   ))}
                                 </select>
-                                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                <div className="grid grid-cols-1 2xs:grid-cols-2 gap-2 sm:grid-cols-4">
                                   <input
                                     type="text"
                                     placeholder="Range (e.g. 5-30.2)"
@@ -268,6 +270,7 @@ export default function AudioMerger() {
                                     type="number"
                                     {...volumeConstraints}
                                     placeholder={`Volume (${volumeConstraints.min}-${volumeConstraints.max})`}
+                                    defaultValue={volume}
                                     onChange={(e) => handleAdvancedUpdate(id, { volume: normalize(e.target.value, volumeConstraints, 1) })}
                                     className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
                                   />
@@ -275,6 +278,7 @@ export default function AudioMerger() {
                                     type="number"
                                     {...rateConstraints}
                                     placeholder={`Rate (${rateConstraints.min}-${rateConstraints.max})`}
+                                    defaultValue={rate}
                                     onChange={(e) => handleAdvancedUpdate(id, { rate: normalize(e.target.value, rateConstraints, 1) })}
                                     className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
                                   />
@@ -282,6 +286,7 @@ export default function AudioMerger() {
                                     type="number"
                                     {...startAtConstraints}
                                     placeholder="Start at (s)"
+                                    defaultValue={startAt}
                                     onChange={(e) => handleAdvancedUpdate(id, { startAt: normalize(e.target.value, startAtConstraints, 0) })}
                                     className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
                                   />

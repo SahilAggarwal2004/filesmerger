@@ -1,4 +1,4 @@
-import type { ImageFormat, DimensionStrategy, AudioFormat, Tools, Constraints, TransformOption } from "./types";
+import type { ImageFormat, DimensionStrategy, AudioFormat, Tools, Constraints, TransformOption, RotationOption } from "./types";
 
 // General
 export const constraints: Constraints = {
@@ -77,6 +77,16 @@ export const transformOptionDescriptions = {
 };
 
 export const transformOptions = Object.keys(transformOptionDescriptions) as TransformOption[];
+
+// PDF
+export const rotationOptionDescriptions = {
+  0: "No Rotation",
+  90: "90° Clockwise",
+  180: "180°",
+  270: "270° Clockwise (90° Counter-clockwise)",
+};
+
+export const rotationOptions = Object.keys(rotationOptionDescriptions).map(Number) as RotationOption[];
 
 // Audio
 export const audioFormatDescriptions = {
