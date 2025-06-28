@@ -122,7 +122,7 @@ export default function PdfMerger() {
                                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Page Range</label>
                                   <input
                                     type="text"
-                                    placeholder="Range (e.g. 1-5, 8, 11-13)"
+                                    placeholder="e.g. 1-5, 8, 11-13"
                                     value={simpleSelections[id]?.range ?? ""}
                                     onChange={(e) => handleSimpleUpdate(id, { range: e.target.value })}
                                     className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
@@ -188,7 +188,7 @@ export default function PdfMerger() {
                                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Page Range</label>
                                   <input
                                     type="text"
-                                    placeholder="Range (e.g. 1-5, 8, 11-13)"
+                                    placeholder="e.g. 1-5, 8, 11-13"
                                     value={range}
                                     onChange={(e) => handleAdvancedUpdate(id, { range: e.target.value })}
                                     className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"

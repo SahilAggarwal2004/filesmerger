@@ -1,7 +1,7 @@
 // Navbar.tsx
 import Link from "next/link";
 import { useState } from "react";
-import { tools } from "@/constants";
+import { tools, toolsInfo } from "@/constants";
 import Hamburger from "../icons/Hamburger";
 import Expandable from "./Expandable";
 
@@ -20,11 +20,14 @@ export default function Navbar() {
       </div>
       <Expandable expand={!hide}>
         <div className="flex flex-col mt-3 space-y-1 sm:m-0 sm:flex-row sm:space-x-4 sm:space-y-0">
-          {Object.values(tools).map(({ href, title }) => (
-            <Link key={href} href={href} onClick={() => setHide(true)} className="text-white hover:text-indigo-200 min-w-max! w-full text-center">
-              {title}
-            </Link>
-          ))}
+          {tools.map((tool) => {
+            const { href, title } = toolsInfo[tool];
+            return (
+              <Link key={href} href={href} onClick={() => setHide(true)} className="text-white hover:text-indigo-200 min-w-max! w-full text-center">
+                {title}
+              </Link>
+            );
+          })}
         </div>
       </Expandable>
     </nav>

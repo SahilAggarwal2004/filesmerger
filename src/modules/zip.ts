@@ -51,7 +51,7 @@ async function processZipFile(file: File, extractTo: string = "", include: strin
   for (const [name, entry] of Object.entries(entries)) {
     if (entry.isDirectory) continue;
     if (!matchesPattern(name, include)) continue;
-    const fullPath = extractTo && extractTo !== "." ? `${extractTo}/${name}` : name;
+    const fullPath = extractTo ? `${extractTo}/${name}` : name;
     const resolvedName = resolveNameCollision(fullPath, existingNames);
     const arrayBuffer = await entry.arrayBuffer();
     zipEntries.push({ name: resolvedName, input: new Uint8Array(arrayBuffer), lastModified: entry.lastModDate });
@@ -75,7 +75,7 @@ export async function mergeZips(filesToProcess: FileToProcess[], onProgress: (cu
     try {
       const isZip = file.type === "application/zip" || file.name.toLowerCase().endsWith(".zip");
       if (isZip) {
-        const zipEntries = await processZipFile(file, extractTo || file.name.replace(/\.zip$/i, ""), include, existingNames);
+        const zipEntries = await processZipFile(file, extractTo, include, existingNames);
         allEntries.push(...zipEntries);
       } else {
         const entry = await processRegularFile(file, extractTo, existingNames);

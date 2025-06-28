@@ -180,8 +180,8 @@ export default function AudioMerger() {
                           {loadedAudios.map(({ duration, id, name, size, url }) => (
                             <div key={id} className="flex items-start py-2 border rounded-xl shadow-sm text-sm">
                               <ReorderIcon className="w-5 mt-2 mx-1.5 shrink-0" />
-                              <div className="flex gap-2 grow flex-col justify-center">
-                                <div className="flex gap-2 grow items-center">
+                              <div className="flex-1 space-y-3">
+                                <div className="flex gap-2 items-center">
                                   <button
                                     onClick={() => toggleAudioPlayback({ id, url })}
                                     className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center"
@@ -195,30 +195,40 @@ export default function AudioMerger() {
                                     </div>
                                   </div>
                                 </div>
-                                <div className="grid grid-cols-1 gap-2 xs:grid-cols-3">
-                                  <input
-                                    type="text"
-                                    placeholder="Range (e.g. 5-30.2)"
-                                    value={simpleSelections[id]?.range ?? ""}
-                                    onChange={(e) => handleSimpleUpdate(id, { range: e.target.value })}
-                                    className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white grow"
-                                  />
-                                  <input
-                                    type="number"
-                                    {...volumeConstraints}
-                                    placeholder={`Volume (${volumeConstraints.min}-${volumeConstraints.max})`}
-                                    defaultValue={simpleSelections[id]?.volume ?? ""}
-                                    onChange={(e) => handleSimpleUpdate(id, { volume: normalize(e.target.value, volumeConstraints, 1) })}
-                                    className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
-                                  />
-                                  <input
-                                    type="number"
-                                    {...rateConstraints}
-                                    placeholder={`Rate (${rateConstraints.min}-${rateConstraints.max})`}
-                                    defaultValue={simpleSelections[id]?.rate ?? ""}
-                                    onChange={(e) => handleSimpleUpdate(id, { rate: normalize(e.target.value, rateConstraints, 1) })}
-                                    className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
-                                  />
+
+                                <div className="grid grid-cols-1 xs:grid-cols-3 gap-3">
+                                  <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Time Range</label>
+                                    <input
+                                      type="text"
+                                      placeholder="e.g. 5-30.2"
+                                      value={simpleSelections[id]?.range ?? ""}
+                                      onChange={(e) => handleSimpleUpdate(id, { range: e.target.value })}
+                                      className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Volume</label>
+                                    <input
+                                      type="number"
+                                      {...volumeConstraints}
+                                      placeholder={`1 (${volumeConstraints.min}-${volumeConstraints.max})`}
+                                      defaultValue={simpleSelections[id]?.volume ?? ""}
+                                      onChange={(e) => handleSimpleUpdate(id, { volume: normalize(e.target.value, volumeConstraints, 1) })}
+                                      className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Playback Rate</label>
+                                    <input
+                                      type="number"
+                                      {...rateConstraints}
+                                      placeholder={`1 (${rateConstraints.min}-${rateConstraints.max})`}
+                                      defaultValue={simpleSelections[id]?.rate ?? ""}
+                                      onChange={(e) => handleSimpleUpdate(id, { rate: normalize(e.target.value, rateConstraints, 1) })}
+                                      className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    />
+                                  </div>
                                 </div>
                               </div>
                               <button onClick={() => removeFile(id)} className="text-red-500 hover:text-red-700 w-5 mt-2 mx-1.5 shrink-0">
@@ -228,7 +238,7 @@ export default function AudioMerger() {
                           ))}
                         </ReorderList>
                         <p className="text-xs text-slate-500 dark:text-slate-400 italic mt-1">
-                          Leave the range blank to include the entire audio. Set the volume (1.0 is normal) and rate (1.0 is normal).
+                          Leave the range blank to include the entire audio. Set the volume (1 is normal) and rate (1 is normal).
                         </p>
                       </div>
                     ) : (
@@ -246,50 +256,66 @@ export default function AudioMerger() {
                           {advancedSelections.map(({ id, audioIndex, range = "", volume = "", rate = "", startAt = "" }) => (
                             <div key={id} className="flex items-start py-2 border rounded-xl shadow-sm text-sm">
                               <ReorderIcon className="w-5 mt-2 mx-1.5 shrink-0" />
-                              <div className="flex gap-2 grow flex-col justify-center">
-                                <select
-                                  value={audioIndex}
-                                  onChange={(e) => handleAdvancedUpdate(id, { audioIndex: +e.target.value })}
-                                  className="flex-1 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
-                                >
-                                  {loadedAudios.map(({ name }, i) => (
-                                    <option key={i} value={i}>
-                                      {name}
-                                    </option>
-                                  ))}
-                                </select>
-                                <div className="grid grid-cols-1 2xs:grid-cols-2 gap-2 sm:grid-cols-4">
-                                  <input
-                                    type="text"
-                                    placeholder="Range (e.g. 5-30.2)"
-                                    value={range}
-                                    onChange={(e) => handleAdvancedUpdate(id, { range: e.target.value })}
-                                    className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
-                                  />
-                                  <input
-                                    type="number"
-                                    {...volumeConstraints}
-                                    placeholder={`Volume (${volumeConstraints.min}-${volumeConstraints.max})`}
-                                    defaultValue={volume}
-                                    onChange={(e) => handleAdvancedUpdate(id, { volume: normalize(e.target.value, volumeConstraints, 1) })}
-                                    className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
-                                  />
-                                  <input
-                                    type="number"
-                                    {...rateConstraints}
-                                    placeholder={`Rate (${rateConstraints.min}-${rateConstraints.max})`}
-                                    defaultValue={rate}
-                                    onChange={(e) => handleAdvancedUpdate(id, { rate: normalize(e.target.value, rateConstraints, 1) })}
-                                    className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
-                                  />
-                                  <input
-                                    type="number"
-                                    {...startAtConstraints}
-                                    placeholder="Start at (s)"
-                                    defaultValue={startAt}
-                                    onChange={(e) => handleAdvancedUpdate(id, { startAt: normalize(e.target.value, startAtConstraints, 0) })}
-                                    className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
-                                  />
+                              <div className="flex-1 space-y-3">
+                                <div>
+                                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Select Audio</label>
+                                  <select
+                                    value={audioIndex}
+                                    onChange={(e) => handleAdvancedUpdate(id, { audioIndex: +e.target.value })}
+                                    className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
+                                  >
+                                    {loadedAudios.map(({ name }, i) => (
+                                      <option key={i} value={i}>
+                                        {name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 sm:grid-cols-4">
+                                  <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Time Range</label>
+                                    <input
+                                      type="text"
+                                      placeholder="e.g. 5-30.2"
+                                      value={range}
+                                      onChange={(e) => handleAdvancedUpdate(id, { range: e.target.value })}
+                                      className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Volume</label>
+                                    <input
+                                      type="number"
+                                      {...volumeConstraints}
+                                      placeholder={`1 (${volumeConstraints.min}-${volumeConstraints.max})`}
+                                      defaultValue={volume}
+                                      onChange={(e) => handleAdvancedUpdate(id, { volume: normalize(e.target.value, volumeConstraints, 1) })}
+                                      className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Playback Rate</label>
+                                    <input
+                                      type="number"
+                                      {...rateConstraints}
+                                      placeholder={`1 (${rateConstraints.min}-${rateConstraints.max})`}
+                                      defaultValue={rate}
+                                      onChange={(e) => handleAdvancedUpdate(id, { rate: normalize(e.target.value, rateConstraints, 1) })}
+                                      className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Start At (seconds)</label>
+                                    <input
+                                      type="number"
+                                      {...startAtConstraints}
+                                      placeholder="Start time"
+                                      defaultValue={startAt}
+                                      onChange={(e) => handleAdvancedUpdate(id, { startAt: normalize(e.target.value, startAtConstraints, 0) })}
+                                      className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    />
+                                  </div>
                                 </div>
                               </div>
                               <button
@@ -303,8 +329,8 @@ export default function AudioMerger() {
                         </ReorderList>
                         {advancedSelections.length > 0 && (
                           <p className="text-xs text-slate-500 dark:text-slate-400 italic">
-                            Leave the range empty for full audio. Set volume (1.0 is normal), rate (1.0 is normal). Set &quot;Start at&quot; to specify when this audio should begin
-                            in the timeline (for overlapping).
+                            Leave the range empty for full audio. Set volume (1 is normal), rate (1 is normal). Set &quot;Start at&quot; to specify when this audio should begin in
+                            the timeline (for overlapping).
                           </p>
                         )}
                         <button

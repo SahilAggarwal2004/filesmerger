@@ -32,7 +32,7 @@ declare global {
 
 // components/FileDropZone.tsx
 export type FileDropZoneProps = {
-  tool: keyof typeof tools;
+  tool: (typeof tools)[number];
   Icon: React.ElementType;
   handleFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   totalSize: number;

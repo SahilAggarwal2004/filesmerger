@@ -142,25 +142,30 @@ export default function ZipMerger() {
                           {zipFiles.map(({ id, name, size, isZip }) => (
                             <div key={id} className="flex items-start py-2 border rounded-xl shadow-sm text-sm">
                               <ReorderIcon className="w-5 mt-2 mx-1.5 shrink-0" />
-                              <div className="flex gap-2 grow flex-col xs:flex-row justify-center">
-                                <div className="flex gap-2 items-center xs:w-1/2">
-                                  <div className="flex-1">
-                                    <div className="font-medium flex items-center gap-2">
-                                      <span className="whitespace-nowrap overflow-hidden text-ellipsis">{name}</span>
-                                      {isZip && <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded shrink-0">ZIP</span>}
-                                    </div>
-                                    <div className="text-xs text-slate-500 dark:text-slate-400">
-                                      {formatFileSize(size)} • {isZip ? "Will be extracted" : "Will be added as-is"}
-                                    </div>
+                              <div className="flex-1 space-y-3">
+                                <div>
+                                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">File</label>
+                                  <div className="flex items-center gap-2 w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white">
+                                    <span className="flex-1 whitespace-nowrap overflow-hidden text-ellipsis">{name}</span>
+                                    {isZip && <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded shrink-0">ZIP</span>}
+                                  </div>
+                                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                    {formatFileSize(size)} • {isZip ? "Will be extracted" : "Will be added as-is"}
                                   </div>
                                 </div>
-                                <input
-                                  type="text"
-                                  placeholder={isZip ? "Include pattern (e.g. *.txt,*.png)" : "Folder path (optional)"}
-                                  value={simpleSelections[id] ?? ""}
-                                  onChange={(e) => setSimpleSelections({ ...simpleSelections, [id]: e.target.value })}
-                                  className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white grow"
-                                />
+
+                                <div className="grid grid-cols-1 gap-3">
+                                  <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{isZip ? "Include Pattern" : "Folder Path"}</label>
+                                    <input
+                                      type="text"
+                                      placeholder={isZip ? "e.g. *.txt, *.png" : "e.g. documents, images"}
+                                      value={simpleSelections[id] ?? ""}
+                                      onChange={(e) => setSimpleSelections({ ...simpleSelections, [id]: e.target.value })}
+                                      className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    />
+                                  </div>
+                                </div>
                               </div>
                               <button onClick={() => removeFile(id)} className="text-red-500 hover:text-red-700 w-5 mt-2 mx-1.5 shrink-0">
                                 ✕
@@ -169,7 +174,7 @@ export default function ZipMerger() {
                           ))}
                         </ReorderList>
                         <p className="text-xs text-slate-500 dark:text-slate-400 italic mt-1">
-                          ZIP files will be extracted into folders (&quot;.&quot; for root). Use include patterns to filter files.
+                          ZIP files are extracted to named folders, other files go to specified folders (root is default). Include patterns filter ZIP contents.
                         </p>
                       </div>
                     ) : (
@@ -184,51 +189,64 @@ export default function ZipMerger() {
                             setAdvancedSelections(reorderedSelections);
                           }}
                         >
-                          {advancedSelections.map(({ id, fileIndex, extractTo = "", include = "" }) => (
-                            <div key={id} className="flex items-start py-2 border rounded-xl shadow-sm text-sm">
-                              <ReorderIcon className="w-5 mt-2 mx-1.5 shrink-0" />
-                              <div className="flex gap-2 grow flex-col justify-center">
-                                <select
-                                  value={fileIndex}
-                                  onChange={(e) => handleAdvancedUpdate(id, { fileIndex: +e.target.value })}
-                                  className="flex-1 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
-                                >
-                                  {zipFiles.map(({ name, isZip }, i) => (
-                                    <option key={i} value={i}>
-                                      {name} {isZip ? "(ZIP)" : ""}
-                                    </option>
-                                  ))}
-                                </select>
-                                <div className="grid grid-cols-1 gap-2 xs:grid-cols-2">
-                                  <input
-                                    type="text"
-                                    placeholder="Folder path (optional)"
-                                    value={extractTo}
-                                    onChange={(e) => handleAdvancedUpdate(id, { extractTo: e.target.value })}
-                                    className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
-                                  />
-                                  <input
-                                    type="text"
-                                    disabled={!zipFiles[fileIndex].isZip}
-                                    placeholder="Include pattern (e.g. *.txt,*.png)"
-                                    value={include}
-                                    onChange={(e) => handleAdvancedUpdate(id, { include: e.target.value })}
-                                    className="border border-slate-300 dark:border-slate-600 rounded p-2 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white disabled:cursor-not-allowed"
-                                  />
+                          {advancedSelections.map(({ id, fileIndex, extractTo = "", include = "" }) => {
+                            const isZip = zipFiles[fileIndex]?.isZip;
+                            return (
+                              <div key={id} className="flex items-start py-2 border rounded-xl shadow-sm text-sm">
+                                <ReorderIcon className="w-5 mt-2 mx-1.5 shrink-0" />
+                                <div className="flex-1 space-y-3">
+                                  <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Select File</label>
+                                    <select
+                                      value={fileIndex}
+                                      onChange={(e) => handleAdvancedUpdate(id, { fileIndex: +e.target.value })}
+                                      className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    >
+                                      {zipFiles.map(({ name, isZip }, i) => (
+                                        <option key={i} value={i}>
+                                          {name} {isZip ? "(ZIP)" : ""}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
+                                    <div>
+                                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{isZip ? "Extract to Folder" : "Folder Path"}</label>
+                                      <input
+                                        type="text"
+                                        placeholder="e.g. documents, images"
+                                        value={extractTo}
+                                        onChange={(e) => handleAdvancedUpdate(id, { extractTo: e.target.value })}
+                                        className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Include Pattern</label>
+                                      <input
+                                        type="text"
+                                        disabled={!isZip}
+                                        placeholder="e.g. *.txt, *.png"
+                                        value={include}
+                                        onChange={(e) => handleAdvancedUpdate(id, { include: e.target.value })}
+                                        className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                                      />
+                                    </div>
+                                  </div>
                                 </div>
+                                <button
+                                  onClick={() => setAdvancedSelections((prev) => prev.filter((sel) => sel.id !== id))}
+                                  className="text-red-500 hover:text-red-700 w-5 mt-2 mx-1.5 shrink-0"
+                                >
+                                  ✕
+                                </button>
                               </div>
-                              <button
-                                onClick={() => setAdvancedSelections((prev) => prev.filter((sel) => sel.id !== id))}
-                                className="text-red-500 hover:text-red-700 w-5 mt-2 mx-1.5 shrink-0"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </ReorderList>
                         {advancedSelections.length > 0 && (
                           <p className="text-xs text-slate-500 dark:text-slate-400 italic">
-                            ZIP files will be extracted into folders (&quot;.&quot; for root). Use include patterns to filter files.
+                            Files are extracted to specified folders (root is default). Include patterns filter ZIP contents.
                           </p>
                         )}
                         <button
@@ -243,7 +261,7 @@ export default function ZipMerger() {
                           }
                           className="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg shadow text-sm"
                         >
-                          + Add ZIP Selection
+                          + Add File Selection
                         </button>
                       </div>
                     )}

@@ -20,36 +20,38 @@ export const modes = ["simple", "advanced"] as const;
 
 export const sizes = { B: 1, KB: 1024, MB: 1048576, GB: 1073741824 }; // In bytes
 
-export const tools: Tools = {
+export const toolsInfo: Tools = {
   image: {
     title: "Image Merger",
-    label: "Image",
+    label: "Image Files",
     description: "Merge multiple images into a single output seamlessly.",
     href: "/image",
     mimetype: "image/*",
   },
   pdf: {
     title: "PDF Merger",
-    label: "PDF",
+    label: "PDF Files",
     description: "Combine PDFs with full control over page selection and order.",
     href: "/pdf",
     mimetype: "application/pdf",
   },
   audio: {
     title: "Audio Merger",
-    label: "Audio",
+    label: "Audio Files",
     description: "Merge multiple audio files into a single output seamlessly.",
     href: "/audio",
     mimetype: ".mp3,.wav,.m4a,.aac,.ogg",
   },
   zip: {
     title: "ZIP Merger",
-    label: "ZIP",
+    label: "Files",
     description: "Merge ZIP and other files into a single .zip archive.",
     href: "/zip",
     mimetype: "*/*",
   },
 };
+
+export const tools = Object.keys(toolsInfo);
 
 // Image
 export const dimensionStrategyDescriptions = {
