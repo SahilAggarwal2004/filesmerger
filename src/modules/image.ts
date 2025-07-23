@@ -25,20 +25,23 @@ export function processAdvancedImage(image: HTMLImageElement, selection: Advance
       break;
     }
     case "crop": {
-      const cropX = Math.max(0, Math.min(selection.cropX ?? 0, image.width));
-      const cropY = Math.max(0, Math.min(selection.cropY ?? 0, image.height));
-      const cropWidth = Math.max(1, selection.cropWidth ?? image.width - cropX);
-      const cropHeight = Math.max(1, selection.cropHeight ?? image.height - cropY);
-
-      canvas.width = cropWidth;
-      canvas.height = cropHeight;
+      const rawCropX = selection.cropX ?? 0;
+      const rawCropY = selection.cropY ?? 0;
+      const cropX = Math.max(0, rawCropX);
+      const cropY = Math.max(0, rawCropY);
+      const offsetX = Math.max(0, -rawCropX);
+      const offsetY = Math.max(0, -rawCropY);
+      canvas.width = Math.max(1, selection.cropWidth ?? image.width - rawCropX);
+      canvas.height = Math.max(1, selection.cropHeight ?? image.height - rawCropY);
+      const cropWidth = canvas.width - offsetX;
+      const cropHeight = canvas.height - offsetY;
 
       if (selection.fillColor) {
         ctx.fillStyle = selection.fillColor;
-        ctx.fillRect(0, 0, cropWidth, cropHeight);
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      ctx.drawImage(image, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+      ctx.drawImage(image, cropX, cropY, cropWidth, cropHeight, offsetX, offsetY, cropWidth, cropHeight);
       break;
     }
   }

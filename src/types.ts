@@ -39,7 +39,7 @@ export type FileDropZoneProps = {
 };
 
 // constants.ts
-export type Constraint = { min: number; max?: number; step: number };
+export type Constraint = { min?: number; max?: number; step: number };
 
 export type Constraints = { [key: string]: Constraint };
 

@@ -25,6 +25,6 @@ export const generateId = () => crypto.randomUUID();
 
 export const minmax = (a: number, b: number, useMin: boolean) => (useMin ? Math.min(a, b) : Math.max(a, b));
 
-export const normalize = (value: string, { min, max = Infinity }: Constraint, defaultValue?: number) => (value ? Math.min(Math.max(+value, min), max) : defaultValue);
+export const normalize = (value: string, { min = -Infinity, max = Infinity }: Constraint, defaultValue?: number) => (value ? Math.min(Math.max(+value, min), max) : defaultValue);
 
 export const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
