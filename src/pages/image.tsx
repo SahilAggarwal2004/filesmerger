@@ -15,6 +15,10 @@ import {
   transformOptions,
   transformOptionDescriptions,
   constraints,
+  rotationOptions,
+  rotationOptionDescriptions,
+  colors,
+  colorDescriptions,
 } from "@/constants";
 import { loadImages, processAdvancedImage } from "@/modules/image";
 import { calcSize, download, formatFileSize, minmax, sum, generateId, normalize } from "@/modules/utils";
@@ -33,7 +37,7 @@ export default function ImageMerger() {
   const [dimensionStrategy, setDimensionStrategy] = useState<DimensionStrategy>("minimum");
   const [outputFormat, setOutputFormat] = useState<ImageFormat>("jpeg");
   const [quality, setQuality] = useState(0.8);
-  const [backgroundColor, setBackgroundColor] = useState("#ffffff");
+  const [backgroundColor, setBackgroundColor] = useState("transparent");
 
   const totalSize = useMemo(() => calcSize(loadedImages), [loadedImages]);
   const isOriginal = dimensionStrategy === "original";
@@ -84,7 +88,7 @@ export default function ImageMerger() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return alert("Unable to create canvas context. Please try a different browser.");
 
-    if (isOriginal) {
+    if (isOriginal && backgroundColor !== "transparent") {
       ctx.fillStyle = backgroundColor;
       ctx.fillRect(0, 0, canvasWidth, canvasHeight);
     }
@@ -210,6 +214,7 @@ export default function ImageMerger() {
                           ({
                             id,
                             imageIndex,
+                            rotation,
                             transformOption,
                             scaleFactor = "",
                             targetWidth = "",
@@ -242,6 +247,21 @@ export default function ImageMerger() {
                                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                                       Original: {element.width}×{element.height}px
                                     </p>
+                                  </div>
+
+                                  <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Rotation</label>
+                                    <select
+                                      value={rotation}
+                                      onChange={(e) => handleAdvancedUpdate(id, { rotation: +e.target.value })}
+                                      className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
+                                    >
+                                      {rotationOptions.map((option) => (
+                                        <option key={option} value={option}>
+                                          {rotationOptionDescriptions[option]}
+                                        </option>
+                                      ))}
+                                    </select>
                                   </div>
 
                                   <div>
@@ -350,12 +370,25 @@ export default function ImageMerger() {
                                       </div>
                                       <div className="flex items-center gap-3">
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Fill Color</label>
-                                        <input
-                                          type="color"
-                                          value={fillColor}
-                                          onChange={(e) => handleAdvancedUpdate(id, { fillColor: e.target.value })}
-                                          className="h-8 w-16 rounded border border-slate-300 dark:border-slate-600"
-                                        />
+                                        <select
+                                          value={fillColor === "transparent" ? "transparent" : "color"}
+                                          onChange={(e) => handleAdvancedUpdate(id, { fillColor: e.target.value === "transparent" ? "transparent" : "#ffffff" })}
+                                          className="h-8 px-2 text-xs border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
+                                        >
+                                          {colors.map((color) => (
+                                            <option key={color} value={color}>
+                                              {colorDescriptions[color]}
+                                            </option>
+                                          ))}
+                                        </select>
+                                        {fillColor !== "transparent" && (
+                                          <input
+                                            type="color"
+                                            value={fillColor}
+                                            onChange={(e) => handleAdvancedUpdate(id, { fillColor: e.target.value })}
+                                            className="h-8 w-16 rounded border border-slate-300 dark:border-slate-600"
+                                          />
+                                        )}
                                       </div>
                                       <p className="text-xs text-slate-500 dark:text-slate-400">
                                         Leave crop dimensions empty to use full image. Fill color is used when crop area extends beyond image boundaries.
@@ -375,7 +408,9 @@ export default function ImageMerger() {
                         )}
                       </ReorderList>
                       <button
-                        onClick={() => setAdvancedSelections((prev) => [...prev, { id: generateId(), imageIndex: 0, transformOption: "resize", fillColor: "#ffffff" }])}
+                        onClick={() =>
+                          setAdvancedSelections((prev) => [...prev, { id: generateId(), imageIndex: 0, rotation: 0, transformOption: "resize", fillColor: "transparent" }])
+                        }
                         className="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg shadow text-sm"
                       >
                         + Add Image Selection
@@ -421,9 +456,24 @@ export default function ImageMerger() {
                       ))}
 
                       {isOriginal && (
-                        <div className="ml-6 mt-2 flex space-x-3 items-center">
+                        <div className="ml-6 mt-2 flex flex-col space-y-2 xs:space-x-3 xs:space-y-0 xs:flex-row xs:items-center">
                           <label className="block text-sm text-slate-600 dark:text-slate-400">Background Color</label>
-                          <input type="color" value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} className="h-7 w-12 p-0 rounded" />
+                          <div className="flex items-center space-x-3">
+                            <select
+                              value={backgroundColor === "transparent" ? "transparent" : "color"}
+                              onChange={(e) => setBackgroundColor(e.target.value === "transparent" ? "transparent" : "#ffffff")}
+                              className="h-7 px-2 text-xs border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
+                            >
+                              {colors.map((color) => (
+                                <option key={color} value={color}>
+                                  {colorDescriptions[color]}
+                                </option>
+                              ))}
+                            </select>
+                            {backgroundColor !== "transparent" && (
+                              <input type="color" value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} className="h-7 w-12 p-0 rounded" />
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>

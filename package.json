@@ -1,6 +1,6 @@
 {
   "name": "filesmerge",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "client-zip": "^2.5.0",
-    "next": "15.4.3",
+    "next": "15.4.4",
     "pdf-lib": "^1.17.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -27,10 +27,10 @@
     "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/serviceworker": "^0.0.146",
+    "@types/serviceworker": "^0.0.147",
     "@types/streamsaver": "^2.0.5",
     "eslint": "^9",
-    "eslint-config-next": "15.4.3",
+    "eslint-config-next": "15.4.4",
     "serwist": "^9.1.1",
     "tailwindcss": "^4",
     "typescript": "^5"

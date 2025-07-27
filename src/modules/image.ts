@@ -1,10 +1,24 @@
-import { ImageSelections, LoadedImage, ProcessedImage } from "@/types";
+import { ImageElement, ImageSelections, LoadedImage, ProcessedImage } from "@/types";
 import { generateId } from "./utils";
 
-export function processAdvancedImage(image: HTMLImageElement, selection: AdvancedSelection<ImageSelections>): ProcessedImage {
+export function processAdvancedImage(image: ImageElement, selection: AdvancedSelection<ImageSelections>): ProcessedImage {
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Unable to create canvas context");
+
+  const rotation = selection.rotation;
+
+  if (rotation !== 0) {
+    const rotatedCanvas = document.createElement("canvas");
+    const rotatedCtx = rotatedCanvas.getContext("2d")!;
+    const isVerticalRotation = rotation === 90 || rotation === 270;
+    rotatedCanvas.width = isVerticalRotation ? image.height : image.width;
+    rotatedCanvas.height = isVerticalRotation ? image.width : image.height;
+    rotatedCtx.translate(rotatedCanvas.width / 2, rotatedCanvas.height / 2);
+    rotatedCtx.rotate((rotation * Math.PI) / 180);
+    rotatedCtx.drawImage(image, -image.width / 2, -image.height / 2);
+    image = rotatedCanvas;
+  }
 
   switch (selection.transformOption) {
     case "resize": {
@@ -36,7 +50,7 @@ export function processAdvancedImage(image: HTMLImageElement, selection: Advance
       const cropWidth = canvas.width - offsetX;
       const cropHeight = canvas.height - offsetY;
 
-      if (selection.fillColor) {
+      if (selection.fillColor && selection.fillColor !== "transparent") {
         ctx.fillStyle = selection.fillColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }

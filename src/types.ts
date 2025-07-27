@@ -9,6 +9,7 @@ import {
   audioFormatDescriptions,
   transformOptionDescriptions,
   rotationOptionDescriptions,
+  colorDescriptions,
 } from "./constants";
 
 declare global {
@@ -74,7 +75,11 @@ export type LoadedAudio = {
 };
 
 // pages/image.tsx
+export type Color = keyof typeof colorDescriptions;
+
 export type DimensionStrategy = keyof typeof dimensionStrategyDescriptions;
+
+export type ImageElement = HTMLCanvasElement | HTMLImageElement
 
 export type ImageFormat = keyof typeof imageFormatDescriptions;
 
@@ -83,6 +88,7 @@ export type ImageSelections = FileSelections<
   {
     id: string;
     imageIndex: number;
+    rotation: number;
     transformOption: TransformOption;
     scaleFactor?: number;
     targetWidth?: number;
@@ -108,7 +114,7 @@ export type MergeDirection = (typeof mergeDirections)[number];
 export type MergedImage = { url: string; size: number } | null;
 
 export type ProcessedImage = {
-  element: HTMLCanvasElement | HTMLImageElement;
+  element: ImageElement;
   width: number;
   height: number;
 };

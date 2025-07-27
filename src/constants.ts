@@ -1,4 +1,4 @@
-import type { ImageFormat, DimensionStrategy, AudioFormat, Tools, Constraints, TransformOption, RotationOption } from "./types";
+import type { ImageFormat, DimensionStrategy, AudioFormat, Tools, Constraints, TransformOption, RotationOption, Color } from "./types";
 
 // General
 export const constraints: Constraints = {
@@ -54,6 +54,13 @@ export const toolsInfo: Tools = {
 export const tools = Object.keys(toolsInfo);
 
 // Image
+export const colorDescriptions = {
+  transparent: "Transparent",
+  color: "Color",
+};
+
+export const colors = Object.keys(colorDescriptions) as Color[];
+
 export const dimensionStrategyDescriptions = {
   minimum: "Minimum dimensions",
   maximum: "Maximum dimensions",
