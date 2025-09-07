@@ -3,7 +3,7 @@ import { PDFDocument, degrees } from "pdf-lib";
 export async function mergePdfs() {
   const mergedPdf = await PDFDocument.create();
 
-  async function handleFile(file: File, range: string = "", rotation: number) {
+  async function handleFile(file: File, range: string = "", rotation: number = 0) {
     const fileBytes = new Uint8Array(await file.arrayBuffer());
     const pdf = await PDFDocument.load(fileBytes);
     const selectedPages = rangeToPages(range) || Array.from({ length: pdf.getPageCount() }, (_, i) => i);

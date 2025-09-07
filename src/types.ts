@@ -79,7 +79,7 @@ export type Color = keyof typeof colorDescriptions;
 
 export type DimensionStrategy = keyof typeof dimensionStrategyDescriptions;
 
-export type ImageElement = HTMLCanvasElement | HTMLImageElement
+export type ImageElement = HTMLCanvasElement | HTMLImageElement;
 
 export type ImageFormat = keyof typeof imageFormatDescriptions;
 
@@ -126,7 +126,7 @@ export type Unit = keyof typeof sizes;
 // pages/pdf.tsx
 export type PDFFile = { id: string; file: File };
 
-export type PDFSelections = FileSelections<{ range?: string; rotation: number }, { id: string; pdfIndex: number; range?: string; rotation: number }>;
+export type PDFSelections = FileSelections<{ range?: string; rotation?: number }, { id: string; pdfIndex: number; range?: string; rotation?: number }>;
 
 export type RotationOption = keyof typeof rotationOptionDescriptions;
 
