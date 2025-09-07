@@ -135,7 +135,7 @@ export default function ZipMerger() {
                           animationDuration={200}
                           props={{ className: "space-y-2" }}
                           onPositionChange={({ newItems }) => {
-                            const reorderedFiles = newItems.flatMap((item) => (isValidElement(item) ? zipFiles.find(({ id }) => item.key?.includes(id))! : []));
+                            const reorderedFiles = newItems.flatMap((item) => (isValidElement(item) ? zipFiles.find(({ id }) => item.key === id)! : []));
                             setZipFiles(reorderedFiles);
                           }}
                         >
@@ -185,7 +185,7 @@ export default function ZipMerger() {
                           animationDuration={200}
                           props={{ className: "space-y-2" }}
                           onPositionChange={({ newItems }) => {
-                            const reorderedSelections = newItems.flatMap((item) => (isValidElement(item) ? advancedSelections.find(({ id }) => item.key?.includes(id))! : []));
+                            const reorderedSelections = newItems.flatMap((item) => (isValidElement(item) ? advancedSelections.find(({ id }) => item.key === id)! : []));
                             setAdvancedSelections(reorderedSelections);
                           }}
                         >

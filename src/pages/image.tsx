@@ -171,7 +171,7 @@ export default function ImageMerger() {
                         animationDuration={200}
                         props={{ className: "grid grid-cols-1 2xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4" }}
                         onPositionChange={({ newItems }) => {
-                          const reorderedImages = newItems.flatMap((item) => (isValidElement(item) ? loadedImages.find(({ id }) => item.key?.includes(id))! : []));
+                          const reorderedImages = newItems.flatMap((item) => (isValidElement(item) ? loadedImages.find(({ id }) => item.key === id)! : []));
                           setLoadedImages(reorderedImages);
                         }}
                       >
@@ -206,7 +206,7 @@ export default function ImageMerger() {
                         animationDuration={200}
                         props={{ className: "space-y-2" }}
                         onPositionChange={({ newItems }) => {
-                          const reorderedSelections = newItems.flatMap((item) => (isValidElement(item) ? advancedSelections.find(({ id }) => item.key?.includes(id))! : []));
+                          const reorderedSelections = newItems.flatMap((item) => (isValidElement(item) ? advancedSelections.find(({ id }) => item.key === id)! : []));
                           setAdvancedSelections(reorderedSelections);
                         }}
                       >

@@ -45,7 +45,7 @@ export default function PdfMerger() {
         await handleFile(file, range, rotation);
       }
     else for (const { pdfIndex, range, rotation } of advancedSelections) await handleFile(pdfFiles[pdfIndex].file, range, rotation);
-    const blob = new Blob([await mergedPdf.save()], { type: "application/pdf" });
+    const blob = new Blob([(await mergedPdf.save()) as any], { type: "application/pdf" });
     setMergedPdfUrl(URL.createObjectURL(blob));
   }
 
@@ -102,7 +102,7 @@ export default function PdfMerger() {
                         animationDuration={200}
                         props={{ className: "space-y-2" }}
                         onPositionChange={({ newItems }) => {
-                          const reorderedFiles = newItems.flatMap((item) => (isValidElement(item) ? pdfFiles.find(({ id }) => item.key?.includes(id))! : []));
+                          const reorderedFiles = newItems.flatMap((item) => (isValidElement(item) ? pdfFiles.find(({ id }) => item.key === id)! : []));
                           setPdfFiles(reorderedFiles);
                         }}
                       >
@@ -160,7 +160,7 @@ export default function PdfMerger() {
                         animationDuration={200}
                         props={{ className: "space-y-2" }}
                         onPositionChange={({ newItems }) => {
-                          const reorderedSelections = newItems.flatMap((item) => (isValidElement(item) ? advancedSelections.find(({ id }) => item.key?.includes(id))! : []));
+                          const reorderedSelections = newItems.flatMap((item) => (isValidElement(item) ? advancedSelections.find(({ id }) => item.key === id)! : []));
                           setAdvancedSelections(reorderedSelections);
                         }}
                       >

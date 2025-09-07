@@ -173,7 +173,7 @@ export default function AudioMerger() {
                           animationDuration={200}
                           props={{ className: "space-y-2" }}
                           onPositionChange={({ newItems }) => {
-                            const reorderedFiles = newItems.flatMap((item) => (isValidElement(item) ? loadedAudios.find(({ id }) => item.key?.includes(id))! : []));
+                            const reorderedFiles = newItems.flatMap((item) => (isValidElement(item) ? loadedAudios.find(({ id }) => item.key === id)! : []));
                             setLoadedAudios(reorderedFiles);
                           }}
                         >
@@ -249,7 +249,7 @@ export default function AudioMerger() {
                           animationDuration={200}
                           props={{ className: "space-y-2" }}
                           onPositionChange={({ newItems }) => {
-                            const reorderedSelections = newItems.flatMap((item) => (isValidElement(item) ? advancedSelections.find(({ id }) => item.key?.includes(id))! : []));
+                            const reorderedSelections = newItems.flatMap((item) => (isValidElement(item) ? advancedSelections.find(({ id }) => item.key === id)! : []));
                             setAdvancedSelections(reorderedSelections);
                           }}
                         >
