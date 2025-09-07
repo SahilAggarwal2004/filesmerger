@@ -2,7 +2,7 @@ import type { ImageFormat, DimensionStrategy, AudioFormat, Tools, Constraints, T
 
 // General
 export const constraints: Constraints = {
-  scaleConstraints: { min: 0.1, max: 10, step: 0.1 },
+  scaleConstraints: { min: 0.001, max: 10, step: 0.001 },
   targetWidthConstraints: { min: 1, step: 1 },
   targetHeightConstraints: { min: 1, step: 1 },
   cropXConstraints: { step: 1 },
