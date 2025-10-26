@@ -1,66 +1,81 @@
-import { ImageElement, ImageSelections, LoadedImage, ProcessedImage } from "@/types";
+import { ImageElement, ImageSelections, LoadedImage, ProcessedImage, Transform } from "@/types";
 import { generateId } from "./utils";
 
-export function processAdvancedImage(image: ImageElement, selection: AdvancedSelection<ImageSelections>): ProcessedImage {
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Unable to create canvas context");
+export function getDimensionsAfterTransform(width: number, height: number, transform: Transform) {
+  switch (transform.type) {
+    case "resize":
+      const scale = transform.scaleFactor ?? 1;
+      width = Math.round(width * scale);
+      height = Math.round(height * scale);
+      break;
+    case "stretch":
+      width = transform.targetWidth ?? width;
+      height = transform.targetHeight ?? height;
+      break;
+    case "crop":
+      width = transform.cropWidth ?? width - (transform.cropX ?? 0);
+      height = transform.cropHeight ?? height - (transform.cropY ?? 0);
+      break;
+  }
 
-  const rotation = selection.rotation;
+  return { width: Math.max(1, width), height: Math.max(1, height) };
+}
+
+export const isVerticalRotation = (rotation: number) => rotation === 90 || rotation === 270;
+
+export function processAdvancedImage(image: ImageElement, selection: AdvancedSelection<ImageSelections>): ProcessedImage {
+  const { rotation, transforms } = selection;
 
   if (rotation !== 0) {
-    const rotatedCanvas = document.createElement("canvas");
-    const rotatedCtx = rotatedCanvas.getContext("2d")!;
-    const isVerticalRotation = rotation === 90 || rotation === 270;
-    rotatedCanvas.width = isVerticalRotation ? image.height : image.width;
-    rotatedCanvas.height = isVerticalRotation ? image.width : image.height;
-    rotatedCtx.translate(rotatedCanvas.width / 2, rotatedCanvas.height / 2);
-    rotatedCtx.rotate((rotation * Math.PI) / 180);
-    rotatedCtx.drawImage(image, -image.width / 2, -image.height / 2);
-    image = rotatedCanvas;
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d")!;
+    const verticalRotation = isVerticalRotation(rotation);
+    canvas.width = verticalRotation ? image.height : image.width;
+    canvas.height = verticalRotation ? image.width : image.height;
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.drawImage(image, -image.width / 2, -image.height / 2);
+    image = canvas;
   }
 
-  switch (selection.transformOption) {
-    case "resize": {
-      const scale = selection.scaleFactor ?? 1;
-      const newWidth = Math.round(image.width * scale);
-      const newHeight = Math.round(image.height * scale);
-      canvas.width = newWidth;
-      canvas.height = newHeight;
-      ctx.drawImage(image, 0, 0, newWidth, newHeight);
-      break;
-    }
-    case "stretch": {
-      const newWidth = selection.targetWidth ?? image.width;
-      const newHeight = selection.targetHeight ?? image.height;
-      canvas.width = newWidth;
-      canvas.height = newHeight;
-      ctx.drawImage(image, 0, 0, newWidth, newHeight);
-      break;
-    }
-    case "crop": {
-      const rawCropX = selection.cropX ?? 0;
-      const rawCropY = selection.cropY ?? 0;
-      const cropX = Math.max(0, rawCropX);
-      const cropY = Math.max(0, rawCropY);
-      const offsetX = Math.max(0, -rawCropX);
-      const offsetY = Math.max(0, -rawCropY);
-      canvas.width = Math.max(1, selection.cropWidth ?? image.width - rawCropX);
-      canvas.height = Math.max(1, selection.cropHeight ?? image.height - rawCropY);
-      const cropWidth = canvas.width - offsetX;
-      const cropHeight = canvas.height - offsetY;
+  for (const transform of transforms) {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d")!;
 
-      if (selection.fillColor && selection.fillColor !== "transparent") {
-        ctx.fillStyle = selection.fillColor;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const { width, height } = getDimensionsAfterTransform(image.width, image.height, transform);
+    canvas.width = width;
+    canvas.height = height;
+
+    switch (transform.type) {
+      case "resize":
+      case "stretch": {
+        ctx.drawImage(image, 0, 0, width, height);
+        break;
       }
+      case "crop": {
+        const rawCropX = transform.cropX ?? 0;
+        const rawCropY = transform.cropY ?? 0;
+        const cropX = Math.max(0, rawCropX);
+        const cropY = Math.max(0, rawCropY);
+        const offsetX = Math.max(0, -rawCropX);
+        const offsetY = Math.max(0, -rawCropY);
+        const cropWidth = canvas.width - offsetX;
+        const cropHeight = canvas.height - offsetY;
 
-      ctx.drawImage(image, cropX, cropY, cropWidth, cropHeight, offsetX, offsetY, cropWidth, cropHeight);
-      break;
+        if (transform.fillColor && transform.fillColor !== "transparent") {
+          ctx.fillStyle = transform.fillColor;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        ctx.drawImage(image, cropX, cropY, cropWidth, cropHeight, offsetX, offsetY, cropWidth, cropHeight);
+        break;
+      }
     }
+
+    image = canvas;
   }
 
-  return { element: canvas, width: canvas.width, height: canvas.height };
+  return { element: image, width: image.width, height: image.height };
 }
 
 function loadImage(file: File) {

@@ -6,11 +6,11 @@
 
 ### Image Merger
 
-The **Image Merger** tool allows you to combine multiple image files into one. With customizable options, you can control the merge direction (horizontal or vertical), image dimensions (original or adjusted), and output format (JPEG, PNG, etc.). Additional features include setting the image quality, background color, and more, making it easy to create the perfect merged image for your needs.
+The **Image Merger** tool allows you to combine multiple image files into one. With customizable options, you can control the merge direction (horizontal or vertical) and output format (JPEG, PNG, etc.). The advanced mode enables multi-step transformations on each image with precise control over rotation, resizing, stretching, and cropping - with transforms applied sequentially for complex workflows.
 
 - **Select multiple image files** for merging
 - **Choose merge direction**: horizontal or vertical
-- **Adjust image dimensions** with options for maintaining original size or scaling
+- **Advanced mode with multi-step transforms**: rotate, resize, stretch, and crop each image with drag-to-reorder pipeline
 - **Choose output format**: JPEG, PNG, WebP
 - **Set image quality** and **background color**
 

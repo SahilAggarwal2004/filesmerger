@@ -10,7 +10,7 @@ const withPWA = withSerwistInit({
   swSrc: "src/sw.ts",
   swDest: "public/sw.js",
   exclude: [/public\/sw.js/],
-  disable: process.env.NODE_ENV === "development",
+  disable: process.env.NODE_ENV !== "production",
   register: false,
   reloadOnOnline: false,
   additionalPrecacheEntries: pages.concat(resources).map((url) => ({ url, revision })),

@@ -79,6 +79,8 @@ export type Color = keyof typeof colorDescriptions;
 
 export type DimensionStrategy = keyof typeof dimensionStrategyDescriptions;
 
+export type Dimensions = { width: number; height: number };
+
 export type ImageElement = HTMLCanvasElement | HTMLImageElement;
 
 export type ImageFormat = keyof typeof imageFormatDescriptions;
@@ -89,15 +91,7 @@ export type ImageSelections = FileSelections<
     id: string;
     imageIndex: number;
     rotation: number;
-    transformOption: TransformOption;
-    scaleFactor?: number;
-    targetWidth?: number;
-    targetHeight?: number;
-    cropX?: number;
-    cropY?: number;
-    cropWidth?: number;
-    cropHeight?: number;
-    fillColor?: string;
+    transforms: Transform[];
   }
 >;
 
@@ -118,6 +112,11 @@ export type ProcessedImage = {
   width: number;
   height: number;
 };
+
+export type Transform =
+  | { type: "resize"; scaleFactor?: number }
+  | { type: "stretch"; targetWidth?: number; targetHeight?: number }
+  | { type: "crop"; cropX?: number; cropY?: number; cropWidth?: number; cropHeight?: number; fillColor?: string };
 
 export type TransformOption = keyof typeof transformOptionDescriptions;
 

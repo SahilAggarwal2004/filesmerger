@@ -20,13 +20,307 @@ import {
   colors,
   colorDescriptions,
 } from "@/constants";
-import { loadImages, processAdvancedImage } from "@/modules/image";
+import { getDimensionsAfterTransform, isVerticalRotation, loadImages, processAdvancedImage } from "@/modules/image";
 import { calcSize, download, formatFileSize, minmax, sum, generateId, normalize } from "@/modules/utils";
-import { ImageFormat, LoadedImage, MergedImage, MergeDirection, DimensionStrategy, ImageSelections, ProcessedImage, TransformOption } from "@/types";
+import { ImageFormat, LoadedImage, MergedImage, MergeDirection, DimensionStrategy, ImageSelections, ProcessedImage, TransformOption, Transform, Dimensions } from "@/types";
 import FileDropZone from "@/components/FileDropZone";
 
 const { scaleConstraints, targetWidthConstraints, targetHeightConstraints, cropXConstraints, cropYConstraints, cropWidthConstraints, cropHeightConstraints, qualityConstraints } =
   constraints;
+
+function TransformStep({
+  transform,
+  transformIndex,
+  dimensions,
+  onUpdate,
+  onRemove,
+}: {
+  transform: Transform;
+  transformIndex: number;
+  dimensions: Dimensions;
+  onUpdate: (update: Partial<Transform>) => void;
+  onRemove: () => void;
+}) {
+  const { width, height } = dimensions;
+
+  return (
+    <div className="p-2 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
+      <div className="flex items-start justify-between mb-2 gap-2">
+        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+          Step {transformIndex + 1}: {transformOptionDescriptions[transform.type]}
+        </span>
+        <button onClick={onRemove} className="text-red-500 hover:text-red-700 text-xs shrink-0" aria-label="Remove transform">
+          ✕
+        </button>
+      </div>
+
+      <div className="space-y-2">
+        {transform.type === "resize" ? (
+          <div>
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Scale Factor</label>
+            <input
+              type="number"
+              {...scaleConstraints}
+              placeholder={`1 (${scaleConstraints.min} - ${scaleConstraints.max})`}
+              defaultValue={transform.scaleFactor}
+              onChange={(e) => onUpdate({ scaleFactor: normalize(e.target.value, scaleConstraints, 1) })}
+              className="w-full h-8 px-2 text-sm border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+            />
+          </div>
+        ) : transform.type === "stretch" ? (
+          <div className="grid grid-cols-1 2xs:grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Width (px)</label>
+              <input
+                type="number"
+                {...targetWidthConstraints}
+                placeholder={width.toString()}
+                defaultValue={transform.targetWidth}
+                onChange={(e) => onUpdate({ targetWidth: normalize(e.target.value, targetWidthConstraints) })}
+                className="w-full h-8 px-2 text-sm border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Height (px)</label>
+              <input
+                type="number"
+                {...targetHeightConstraints}
+                placeholder={height.toString()}
+                defaultValue={transform.targetHeight}
+                onChange={(e) => onUpdate({ targetHeight: normalize(e.target.value, targetHeightConstraints) })}
+                className="w-full h-8 px-2 text-sm border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+              />
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 2xs:grid-cols-2 gap-2">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Start X (px)</label>
+                <input
+                  type="number"
+                  {...cropXConstraints}
+                  placeholder="0"
+                  defaultValue={transform.cropX}
+                  onChange={(e) => onUpdate({ cropX: normalize(e.target.value, cropXConstraints) })}
+                  className="w-full h-8 px-2 text-sm border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Start Y (px)</label>
+                <input
+                  type="number"
+                  {...cropYConstraints}
+                  placeholder="0"
+                  defaultValue={transform.cropY}
+                  onChange={(e) => onUpdate({ cropY: normalize(e.target.value, cropYConstraints) })}
+                  className="w-full h-8 px-2 text-sm border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Width (px)</label>
+                <input
+                  type="number"
+                  {...cropWidthConstraints}
+                  placeholder={width.toString()}
+                  defaultValue={transform.cropWidth}
+                  onChange={(e) => onUpdate({ cropWidth: normalize(e.target.value, cropWidthConstraints) })}
+                  className="w-full h-8 px-2 text-sm border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Height (px)</label>
+                <input
+                  type="number"
+                  {...cropHeightConstraints}
+                  placeholder={height.toString()}
+                  defaultValue={transform.cropHeight}
+                  onChange={(e) => onUpdate({ cropHeight: normalize(e.target.value, cropHeightConstraints) })}
+                  className="w-full h-8 px-2 text-sm border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Fill Color</label>
+              <select
+                value={transform.fillColor === "transparent" ? "transparent" : "color"}
+                onChange={(e) => onUpdate({ fillColor: e.target.value === "transparent" ? "transparent" : "#ffffff" })}
+                className="h-7 px-2 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+              >
+                {colors.map((color) => (
+                  <option key={color} value={color}>
+                    {colorDescriptions[color]}
+                  </option>
+                ))}
+              </select>
+              {transform.fillColor !== "transparent" && (
+                <input
+                  type="color"
+                  value={transform.fillColor}
+                  onChange={(e) => onUpdate({ fillColor: e.target.value })}
+                  className="h-7 w-12 rounded border border-slate-300 dark:border-slate-600"
+                />
+              )}
+            </div>
+          </>
+        )}
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          Current: {width}×{height}px
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function AdvancedImageSelection({
+  selection,
+  loadedImages,
+  onUpdate,
+  onRemove,
+}: {
+  selection: AdvancedSelection<ImageSelections>;
+  loadedImages: LoadedImage[];
+  onUpdate: (update: Partial<AdvancedSelection<ImageSelections>>) => void;
+  onRemove: () => void;
+}) {
+  const { id, imageIndex, rotation, transforms } = selection;
+  const { element } = loadedImages[imageIndex];
+  const { width, height } = getDimensionsAfterStep(transforms.length - 1);
+
+  function getDimensionsAfterStep(stepIndex: number) {
+    let width = element.width;
+    let height = element.height;
+
+    if (isVerticalRotation(rotation)) [width, height] = [height, width];
+
+    for (let i = 0; i <= stepIndex; i++) {
+      const transform = transforms[i];
+      if (!transform) break;
+
+      const dimensions = getDimensionsAfterTransform(width, height, transform);
+      width = dimensions.width;
+      height = dimensions.height;
+    }
+
+    return { width, height };
+  }
+
+  function addTransform(type: TransformOption) {
+    const newTransform: Transform = { type };
+    if (newTransform.type === "crop") newTransform.fillColor = "transparent";
+    onUpdate({ transforms: [...transforms, newTransform] });
+  }
+
+  function updateTransform(index: number, update: Partial<Transform>) {
+    const newTransforms = [...transforms];
+    newTransforms[index] = { ...newTransforms[index], ...update };
+    onUpdate({ transforms: newTransforms });
+  }
+
+  function removeTransform(index: number) {
+    onUpdate({ transforms: transforms.filter((_, i) => i !== index) });
+  }
+
+  return (
+    <>
+      <div className="flex-1 space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Source Image</label>
+          <select
+            value={imageIndex}
+            onChange={(e) => onUpdate({ imageIndex: +e.target.value })}
+            className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
+          >
+            {loadedImages.map(({ name }, i) => (
+              <option key={i} value={i}>
+                {name}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Original: {element.width}×{element.height}px
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Rotation</label>
+          <select
+            value={rotation}
+            onChange={(e) => onUpdate({ rotation: +e.target.value })}
+            className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
+          >
+            {rotationOptions.map((option) => (
+              <option key={option} value={option}>
+                {rotationOptionDescriptions[option]}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-2 gap-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Transform Pipeline</label>
+            <span className="text-xs text-slate-500 dark:text-slate-400 text-right">
+              {transforms.length} step{transforms.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+
+          {transforms.length === 0 ? (
+            <p className="text-sm text-slate-500 dark:text-slate-400 italic py-2">No transforms applied. Add a transform below.</p>
+          ) : (
+            <ReorderList
+              useOnlyIconToDrag
+              watchChildrenUpdates
+              animationDuration={200}
+              props={{ className: "space-y-2" }}
+              onPositionChange={({ newItems }) => {
+                const reorderedTransforms = newItems.flatMap((item) => (isValidElement(item) ? transforms[+item.key!] : []));
+                onUpdate({ transforms: reorderedTransforms });
+              }}
+            >
+              {transforms.map((transform, index) => (
+                <div key={index} className="flex items-start gap-1">
+                  <ReorderIcon className="w-4 mt-2 shrink-0" />
+                  <div className="flex-1">
+                    <TransformStep
+                      transform={transform}
+                      transformIndex={index}
+                      dimensions={getDimensionsAfterStep(index - 1)}
+                      onUpdate={(update) => updateTransform(index, update)}
+                      onRemove={() => removeTransform(index)}
+                    />
+                  </div>
+                </div>
+              ))}
+            </ReorderList>
+          )}
+
+          <div className="flex flex-wrap gap-2 mt-3">
+            {transformOptions.map((option) => (
+              <button
+                key={option}
+                onClick={() => addTransform(option)}
+                className="px-3 py-1.5 text-xs bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded border border-blue-200 dark:border-blue-700"
+              >
+                + {transformOptionDescriptions[option]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-700">
+          <p className="text-xs font-medium text-green-700 dark:text-green-300">
+            Final Output: {width}×{height}px
+          </p>
+        </div>
+      </div>
+
+      <button onClick={onRemove} className="text-red-500 hover:text-red-700 w-5 mt-2 mx-0.5 2xs:mx-1.5 shrink-0" aria-label="Remove selection">
+        ✕
+      </button>
+    </>
+  );
+}
 
 export default function ImageMerger() {
   const [loadedImages, setLoadedImages] = useState<LoadedImage[]>([]);
@@ -210,207 +504,20 @@ export default function ImageMerger() {
                           setAdvancedSelections(reorderedSelections);
                         }}
                       >
-                        {advancedSelections.map(
-                          ({
-                            id,
-                            imageIndex,
-                            rotation,
-                            transformOption,
-                            scaleFactor = "",
-                            targetWidth = "",
-                            targetHeight = "",
-                            cropX = "",
-                            cropY = "",
-                            cropWidth = "",
-                            cropHeight = "",
-                            fillColor,
-                          }) => {
-                            const { element } = loadedImages[imageIndex];
-
-                            return (
-                              <div key={id} className="flex items-start py-2 border rounded-xl shadow-sm text-sm">
-                                <ReorderIcon className="w-5 mt-2 mx-1.5 shrink-0" />
-                                <div className="flex-1 space-y-3">
-                                  <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Select Image</label>
-                                    <select
-                                      value={imageIndex}
-                                      onChange={(e) => handleAdvancedUpdate(id, { imageIndex: +e.target.value })}
-                                      className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
-                                    >
-                                      {loadedImages.map(({ name }, i) => (
-                                        <option key={i} value={i}>
-                                          {name}
-                                        </option>
-                                      ))}
-                                    </select>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                                      Original: {element.width}×{element.height}px
-                                    </p>
-                                  </div>
-
-                                  <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Rotation</label>
-                                    <select
-                                      value={rotation}
-                                      onChange={(e) => handleAdvancedUpdate(id, { rotation: +e.target.value })}
-                                      className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
-                                    >
-                                      {rotationOptions.map((option) => (
-                                        <option key={option} value={option}>
-                                          {rotationOptionDescriptions[option]}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  </div>
-
-                                  <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Transform Method</label>
-                                    <select
-                                      value={transformOption}
-                                      onChange={(e) => handleAdvancedUpdate(id, { transformOption: e.target.value as TransformOption })}
-                                      className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
-                                    >
-                                      {transformOptions.map((option) => (
-                                        <option key={option} value={option}>
-                                          {transformOptionDescriptions[option]}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  </div>
-
-                                  {transformOption === "resize" && (
-                                    <div>
-                                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Scale Factor</label>
-                                      <input
-                                        type="number"
-                                        {...scaleConstraints}
-                                        placeholder={`1 (${scaleConstraints.min} - ${scaleConstraints.max})`}
-                                        defaultValue={scaleFactor}
-                                        onChange={(e) => handleAdvancedUpdate(id, { scaleFactor: normalize(e.target.value, scaleConstraints, 1) })}
-                                        className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
-                                      />
-                                    </div>
-                                  )}
-
-                                  {transformOption === "stretch" && (
-                                    <div className="grid grid-cols-1 2xs:grid-cols-2 gap-3">
-                                      <div>
-                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Target Width (px)</label>
-                                        <input
-                                          type="number"
-                                          {...targetWidthConstraints}
-                                          placeholder={element.width.toString()}
-                                          defaultValue={targetWidth}
-                                          onChange={(e) => handleAdvancedUpdate(id, { targetWidth: normalize(e.target.value, targetWidthConstraints) })}
-                                          className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
-                                        />
-                                      </div>
-                                      <div>
-                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Target Height (px)</label>
-                                        <input
-                                          type="number"
-                                          {...targetHeightConstraints}
-                                          placeholder={element.height.toString()}
-                                          defaultValue={targetHeight}
-                                          onChange={(e) => handleAdvancedUpdate(id, { targetHeight: normalize(e.target.value, targetHeightConstraints) })}
-                                          className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
-                                        />
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {transformOption === "crop" && (
-                                    <div className="space-y-3">
-                                      <div className="grid grid-cols-1 2xs:grid-cols-2 gap-3">
-                                        <div>
-                                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Crop Start X (px)</label>
-                                          <input
-                                            type="number"
-                                            {...cropXConstraints}
-                                            placeholder="0"
-                                            defaultValue={cropX}
-                                            onChange={(e) => handleAdvancedUpdate(id, { cropX: normalize(e.target.value, cropXConstraints) })}
-                                            className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
-                                          />
-                                        </div>
-                                        <div>
-                                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Crop Start Y (px)</label>
-                                          <input
-                                            type="number"
-                                            {...cropYConstraints}
-                                            placeholder="0"
-                                            defaultValue={cropY}
-                                            onChange={(e) => handleAdvancedUpdate(id, { cropY: normalize(e.target.value, cropYConstraints) })}
-                                            className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
-                                          />
-                                        </div>
-                                        <div>
-                                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Crop Width (px)</label>
-                                          <input
-                                            type="number"
-                                            {...cropWidthConstraints}
-                                            placeholder={element.width.toString()}
-                                            defaultValue={cropWidth}
-                                            onChange={(e) => handleAdvancedUpdate(id, { cropWidth: normalize(e.target.value, cropWidthConstraints) })}
-                                            className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
-                                          />
-                                        </div>
-                                        <div>
-                                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Crop Height (px)</label>
-                                          <input
-                                            type="number"
-                                            {...cropHeightConstraints}
-                                            placeholder={element.height.toString()}
-                                            defaultValue={cropHeight}
-                                            onChange={(e) => handleAdvancedUpdate(id, { cropHeight: normalize(e.target.value, cropHeightConstraints) })}
-                                            className="w-full h-9 p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
-                                          />
-                                        </div>
-                                      </div>
-                                      <div className="flex items-center gap-3">
-                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Fill Color</label>
-                                        <select
-                                          value={fillColor === "transparent" ? "transparent" : "color"}
-                                          onChange={(e) => handleAdvancedUpdate(id, { fillColor: e.target.value === "transparent" ? "transparent" : "#ffffff" })}
-                                          className="h-8 px-2 text-xs border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white"
-                                        >
-                                          {colors.map((color) => (
-                                            <option key={color} value={color}>
-                                              {colorDescriptions[color]}
-                                            </option>
-                                          ))}
-                                        </select>
-                                        {fillColor !== "transparent" && (
-                                          <input
-                                            type="color"
-                                            value={fillColor}
-                                            onChange={(e) => handleAdvancedUpdate(id, { fillColor: e.target.value })}
-                                            className="h-8 w-16 rounded border border-slate-300 dark:border-slate-600"
-                                          />
-                                        )}
-                                      </div>
-                                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                                        Leave crop dimensions empty to use full image. Fill color is used when crop area extends beyond image boundaries.
-                                      </p>
-                                    </div>
-                                  )}
-                                </div>
-                                <button
-                                  onClick={() => setAdvancedSelections((prev) => prev.filter((sel) => sel.id !== id))}
-                                  className="text-red-500 hover:text-red-700 w-5 mt-2 mx-1.5 shrink-0"
-                                >
-                                  ✕
-                                </button>
-                              </div>
-                            );
-                          }
-                        )}
+                        {advancedSelections.map((selection) => (
+                          <div key={selection.id} className="flex items-start py-2 border rounded-xl shadow-sm text-sm bg-white dark:bg-slate-800">
+                            <ReorderIcon className="w-5 mt-2 mx-0.5 2xs:mx-1.5 shrink-0" />
+                            <AdvancedImageSelection
+                              selection={selection}
+                              loadedImages={loadedImages}
+                              onUpdate={(update) => handleAdvancedUpdate(selection.id, update)}
+                              onRemove={() => setAdvancedSelections((prev) => prev.filter((sel) => sel.id !== selection.id))}
+                            />
+                          </div>
+                        ))}
                       </ReorderList>
                       <button
-                        onClick={() =>
-                          setAdvancedSelections((prev) => [...prev, { id: generateId(), imageIndex: 0, rotation: 0, transformOption: "resize", fillColor: "transparent" }])
-                        }
+                        onClick={() => setAdvancedSelections((prev) => [...prev, { id: generateId(), imageIndex: 0, rotation: 0, transforms: [] }])}
                         className="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg shadow text-sm"
                       >
                         + Add Image Selection
