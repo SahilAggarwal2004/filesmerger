@@ -5,7 +5,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
 import "@/styles/globals.css";
-import { handleVersionUpdate } from "@/modules/update";
+import { handleVersionUpdate } from "@/lib/update";
 import Navbar from "@/components/navbar/Navbar";
 
 export default function App({ Component, pageProps }: AppProps) {
@@ -15,7 +15,8 @@ export default function App({ Component, pageProps }: AppProps) {
   useEffect(() => {
     setLoading(false);
     if ("serviceWorker" in navigator && window.serwist) {
-      window.serwist.register().then(() => window.serwist.addEventListener("controlling", handleVersionUpdate));
+      window.serwist.addEventListener("controlling", handleVersionUpdate);
+      window.serwist.register();
       return () => window.serwist.removeEventListener("controlling", handleVersionUpdate);
     }
   }, []);

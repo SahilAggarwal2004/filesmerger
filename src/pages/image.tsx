@@ -20,8 +20,8 @@ import {
   colors,
   colorDescriptions,
 } from "@/constants";
-import { getDimensionsAfterTransform, isVerticalRotation, loadImages, processAdvancedImage } from "@/modules/image";
-import { calcSize, download, formatFileSize, minmax, sum, generateId, normalize } from "@/modules/utils";
+import { getDimensionsAfterTransform, isVerticalRotation, loadImages, processAdvancedImage } from "@/lib/image";
+import { calcSize, download, formatFileSize, minmax, sum, generateId, normalize } from "@/lib/utils";
 import { ImageFormat, LoadedImage, MergedImage, MergeDirection, DimensionStrategy, ImageSelections, ProcessedImage, TransformOption, Transform, Dimensions } from "@/types";
 import FileDropZone from "@/components/FileDropZone";
 
@@ -409,7 +409,7 @@ export default function ImageMerger() {
         else alert("Failed to create image. Please try again with different images or format.");
       },
       `image/${outputFormat}`,
-      outputFormat === "png" ? undefined : quality
+      outputFormat === "png" ? undefined : quality,
     );
   }
 
@@ -434,7 +434,7 @@ export default function ImageMerger() {
       <main className="py-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white dark:bg-slate-800 shadow-xl rounded-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-5">
+            <div className="bg-linear-to-r from-blue-600 to-indigo-600 p-5">
               <h1 className="text-3xl font-bold text-white">Image Merger</h1>
             </div>
 

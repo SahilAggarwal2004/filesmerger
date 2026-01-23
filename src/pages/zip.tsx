@@ -4,10 +4,10 @@ import { BsFileZip } from "react-icons/bs";
 import ReorderList, { ReorderIcon } from "react-reorder-list";
 
 import { modes } from "@/constants";
-import { calcSize, formatFileSize, generateId } from "@/modules/utils";
+import { calcSize, formatFileSize, generateId } from "@/lib/utils";
 import { FileToProcess, ZipFile, ZipSelections } from "@/types";
 import FileDropZone from "@/components/FileDropZone";
-import { mergeZips } from "@/modules/zip";
+import { mergeZips } from "@/lib/zip";
 
 export default function ZipMerger() {
   const [zipFiles, setZipFiles] = useState<ZipFile[]>([]);
@@ -34,8 +34,8 @@ export default function ZipMerger() {
             name: file.name,
             size: file.size,
             isZip: file.type === "application/zip" || file.name.toLowerCase().endsWith(".zip"),
-          }))
-        )
+          })),
+        ),
       );
       setIsDownloadComplete(false);
     }
@@ -69,7 +69,7 @@ export default function ZipMerger() {
       const controller = await mergeZips(
         filesToProcess,
         (current: number, total: number) => setProgress(Math.round((current / total) * 100)),
-        () => setIsDownloadComplete(true)
+        () => setIsDownloadComplete(true),
       );
 
       function unloadHandler() {
@@ -103,7 +103,7 @@ export default function ZipMerger() {
       <main className="py-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white dark:bg-slate-800 shadow-xl rounded-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-5">
+            <div className="bg-linear-to-r from-blue-600 to-indigo-600 p-5">
               <h1 className="text-3xl font-bold text-white">ZIP Merger</h1>
             </div>
 

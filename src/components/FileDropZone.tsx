@@ -1,5 +1,5 @@
 import { toolsInfo } from "@/constants";
-import { formatFileSize } from "@/modules/utils";
+import { formatFileSize } from "@/lib/utils";
 import { FileDropZoneProps } from "@/types";
 
 export default function FileDropZone({ tool, Icon, handleFileChange, totalSize }: FileDropZoneProps) {

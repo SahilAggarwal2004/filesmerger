@@ -4,8 +4,8 @@ import { BsFiletypePdf } from "react-icons/bs";
 import ReorderList, { ReorderIcon } from "react-reorder-list";
 
 import { modes, rotationOptions, rotationOptionDescriptions } from "@/constants";
-import { mergePdfs } from "@/modules/pdf";
-import { calcSize, download, generateId } from "@/modules/utils";
+import { mergePdfs } from "@/lib/pdf";
+import { calcSize, download, generateId } from "@/lib/utils";
 import { PDFFile, PDFSelections } from "@/types";
 import FileDropZone from "@/components/FileDropZone";
 
@@ -73,7 +73,7 @@ export default function PdfMerger() {
       <main className="py-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white dark:bg-slate-800 shadow-xl rounded-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-5">
+            <div className="bg-linear-to-r from-blue-600 to-indigo-600 p-5">
               <h1 className="text-3xl font-bold text-white">PDF Merger</h1>
             </div>
 

@@ -6,8 +6,8 @@ import ReorderList, { ReorderIcon } from "react-reorder-list";
 
 import FileDropZone from "@/components/FileDropZone";
 import { audioFormatDescriptions, audioFormats, constraints, modes } from "@/constants";
-import { combineAudioBuffers, encodeToFormat, formatDuration, loadAudioBuffer, loadAudios } from "@/modules/audio";
-import { calcSize, download, formatFileSize, generateId, normalize } from "@/modules/utils";
+import { combineAudioBuffers, encodeToFormat, formatDuration, loadAudioBuffer, loadAudios } from "@/lib/audio";
+import { calcSize, download, formatFileSize, generateId, normalize } from "@/lib/utils";
 import { LoadedAudio, AudioSelections, AudioFormat, AudioSegment } from "@/types";
 
 const { volumeConstraints, rateConstraints, startAtConstraints, bitrateConstraints } = constraints;
@@ -141,7 +141,7 @@ export default function AudioMerger() {
       <main className="py-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white dark:bg-slate-800 shadow-xl rounded-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-5">
+            <div className="bg-linear-to-r from-blue-600 to-indigo-600 p-5">
               <h1 className="text-3xl font-bold text-white">Audio Merger</h1>
             </div>
 
@@ -186,9 +186,9 @@ export default function AudioMerger() {
                                   <div className="flex gap-2 items-center">
                                     <button
                                       onClick={() => toggleAudioPlayback({ id, url })}
-                                      className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center"
+                                      className="shrink-0 w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center"
                                     >
-                                      <span className="scale-130 pl-0.25">{id === currentPlayingId ? <BsPauseFill /> : <BsPlayFill />}</span>
+                                      <span className="scale-130 pl-px">{id === currentPlayingId ? <BsPauseFill /> : <BsPlayFill />}</span>
                                     </button>
                                     <div className="flex-1">
                                       <div className="font-medium block whitespace-nowrap overflow-hidden text-ellipsis">{name}</div>
