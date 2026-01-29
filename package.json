@@ -1,6 +1,6 @@
 {
   "name": "filesmerge",
-  "version": "1.10.0",
+  "version": "1.10.1",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -8,13 +8,13 @@
     "start": "next start",
     "lint": "next lint"
   },
-  "packageManager": "pnpm@10.28.1",
+  "packageManager": "pnpm@10.28.2",
   "dependencies": {
     "client-zip": "^2.5.0",
-    "next": "16.1.4",
+    "next": "16.1.6",
     "pdf-lib": "^1.17.1",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "react-icons": "^5.5.0",
     "react-reorder-list": "^0.8.6",
     "streamsaver": "^2.0.6",
@@ -28,10 +28,10 @@
     "@types/node": "^25",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/serviceworker": "^0.0.180",
+    "@types/serviceworker": "^0.0.181",
     "@types/streamsaver": "^2.0.5",
     "eslint": "^9",
-    "eslint-config-next": "16.1.4",
+    "eslint-config-next": "16.1.6",
     "serwist": "^9.5.0",
     "tailwindcss": "^4",
     "typescript": "^5"
