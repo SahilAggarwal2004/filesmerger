@@ -1,4 +1,3 @@
-/* eslint-disable no-var */
 /* eslint-disable @next/next/no-img-element */
 import Head from "next/head";
 import { useState, useEffect, useMemo, isValidElement } from "react";

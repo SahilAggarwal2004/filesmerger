@@ -6,9 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint ."
   },
-  "packageManager": "pnpm@10.28.2",
+  "packageManager": "pnpm@10.29.3",
   "dependencies": {
     "client-zip": "^2.5.0",
     "next": "16.1.6",
@@ -23,16 +23,16 @@
   "devDependencies": {
     "@builder.io/partytown": "^0.10.3",
     "@eslint/eslintrc": "^3",
-    "@serwist/next": "^9.5.0",
+    "@serwist/next": "^9.5.5",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^25",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/serviceworker": "^0.0.181",
+    "@types/serviceworker": "^0.0.188",
     "@types/streamsaver": "^2.0.5",
-    "eslint": "^9",
+    "eslint": "^9.39.2",
     "eslint-config-next": "16.1.6",
-    "serwist": "^9.5.0",
+    "serwist": "^9.5.5",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
