@@ -1,5 +1,5 @@
 import Head from "next/head";
-import { useState, useEffect, useMemo, isValidElement } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { BsFiletypePdf } from "react-icons/bs";
 import ReorderList, { ReorderIcon } from "react-reorder-list";
 
@@ -100,11 +100,11 @@ export default function PdfMerger() {
                     <div className="space-y-4">
                       <ReorderList
                         useOnlyIconToDrag
-                        watchChildrenUpdates
+                        preserveOrder={false}
                         animationDuration={200}
                         props={{ className: "space-y-2" }}
-                        onPositionChange={({ newItems }) => {
-                          const reorderedFiles = newItems.flatMap((item) => (isValidElement(item) ? pdfFiles.find(({ id }) => item.key === id)! : []));
+                        onPositionChange={({ newOrder }) => {
+                          const reorderedFiles = newOrder.flatMap((key) => pdfFiles.find(({ id }) => key === id) || []);
                           setPdfFiles(reorderedFiles);
                         }}
                       >
@@ -161,11 +161,11 @@ export default function PdfMerger() {
                     <div className="space-y-4">
                       <ReorderList
                         useOnlyIconToDrag
-                        watchChildrenUpdates
+                        preserveOrder={false}
                         animationDuration={200}
                         props={{ className: "space-y-2" }}
-                        onPositionChange={({ newItems }) => {
-                          const reorderedSelections = newItems.flatMap((item) => (isValidElement(item) ? advancedSelections.find(({ id }) => item.key === id)! : []));
+                        onPositionChange={({ newOrder }) => {
+                          const reorderedSelections = newOrder.flatMap((key) => advancedSelections.find(({ id }) => key === id) || []);
                           setAdvancedSelections(reorderedSelections);
                         }}
                       >

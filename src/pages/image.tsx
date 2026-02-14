@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import Head from "next/head";
-import { useState, useEffect, useMemo, isValidElement } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { BsImages } from "react-icons/bs";
 import ReorderList, { ReorderIcon } from "react-reorder-list";
 
@@ -182,7 +182,7 @@ function AdvancedImageSelection({
   onUpdate: (update: Partial<AdvancedSelection<ImageSelections>>) => void;
   onRemove: () => void;
 }) {
-  const { id, imageIndex, rotation, transforms } = selection;
+  const { imageIndex, rotation, transforms } = selection;
   const { element } = loadedImages[imageIndex];
   const { width, height } = getDimensionsAfterStep(transforms.length - 1);
 
@@ -269,11 +269,11 @@ function AdvancedImageSelection({
           ) : (
             <ReorderList
               useOnlyIconToDrag
-              watchChildrenUpdates
+              preserveOrder={false}
               animationDuration={200}
               props={{ className: "space-y-2" }}
-              onPositionChange={({ newItems }) => {
-                const reorderedTransforms = newItems.flatMap((item) => (isValidElement(item) ? transforms[+item.key!] : []));
+              onPositionChange={({ newOrder }) => {
+                const reorderedTransforms = newOrder.flatMap((key) => transforms[key as number] || []);
                 onUpdate({ transforms: reorderedTransforms });
               }}
             >
@@ -364,15 +364,16 @@ export default function ImageMerger() {
 
     if (!processedImages.length) return;
 
+    let canvasWidth: number, canvasHeight: number, widths: number[], heights: number[];
     if (isHorizontal) {
-      var canvasHeight = isMinimum ? Infinity : 0;
+      canvasHeight = isMinimum ? Infinity : 0;
       processedImages.forEach(({ height }) => (canvasHeight = minmax(canvasHeight, height, isMinimum)));
-      var widths = processedImages.map(({ width, height }) => (isOriginal ? width : (width * canvasHeight) / height));
-      var canvasWidth = sum(widths);
+      widths = processedImages.map(({ width, height }) => (isOriginal ? width : (width * canvasHeight) / height));
+      canvasWidth = sum(widths);
     } else {
       canvasWidth = isMinimum ? Infinity : 0;
       processedImages.forEach(({ width }) => (canvasWidth = minmax(canvasWidth, width, isMinimum)));
-      var heights = processedImages.map(({ width, height }) => (isOriginal ? height : (height * canvasWidth) / width));
+      heights = processedImages.map(({ width, height }) => (isOriginal ? height : (height * canvasWidth) / width));
       canvasHeight = sum(heights);
     }
 
@@ -460,11 +461,11 @@ export default function ImageMerger() {
                     <div className="space-y-2">
                       <ReorderList
                         useOnlyIconToDrag
-                        watchChildrenUpdates
+                        preserveOrder={false}
                         animationDuration={200}
                         props={{ className: "grid grid-cols-1 2xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4" }}
-                        onPositionChange={({ newItems }) => {
-                          const reorderedImages = newItems.flatMap((item) => (isValidElement(item) ? loadedImages.find(({ id }) => item.key === id)! : []));
+                        onPositionChange={({ newOrder }) => {
+                          const reorderedImages = newOrder.flatMap((key) => loadedImages.find(({ id }) => key === id) || []);
                           setLoadedImages(reorderedImages);
                         }}
                       >
@@ -495,11 +496,11 @@ export default function ImageMerger() {
                     <div className="space-y-4">
                       <ReorderList
                         useOnlyIconToDrag
-                        watchChildrenUpdates
+                        preserveOrder={false}
                         animationDuration={200}
                         props={{ className: "space-y-2" }}
-                        onPositionChange={({ newItems }) => {
-                          const reorderedSelections = newItems.flatMap((item) => (isValidElement(item) ? advancedSelections.find(({ id }) => item.key === id)! : []));
+                        onPositionChange={({ newOrder }) => {
+                          const reorderedSelections = newOrder.flatMap((key) => advancedSelections.find(({ id }) => key === id) || []);
                           setAdvancedSelections(reorderedSelections);
                         }}
                       >

@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import Head from "next/head";
-import { useState, useEffect, useMemo, isValidElement, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { BsMusicNoteBeamed, BsPauseFill, BsPlayFill } from "react-icons/bs";
 import ReorderList, { ReorderIcon } from "react-reorder-list";
 
@@ -169,11 +169,11 @@ export default function AudioMerger() {
                       <div className="space-y-4">
                         <ReorderList
                           useOnlyIconToDrag
-                          watchChildrenUpdates
+                          preserveOrder={false}
                           animationDuration={200}
                           props={{ className: "space-y-2" }}
-                          onPositionChange={({ newItems }) => {
-                            const reorderedFiles = newItems.flatMap((item) => (isValidElement(item) ? loadedAudios.find(({ id }) => item.key === id)! : []));
+                          onPositionChange={({ newOrder }) => {
+                            const reorderedFiles = newOrder.flatMap((key) => loadedAudios.find(({ id }) => key === id) || []);
                             setLoadedAudios(reorderedFiles);
                           }}
                         >
@@ -248,11 +248,11 @@ export default function AudioMerger() {
                       <div className="space-y-4">
                         <ReorderList
                           useOnlyIconToDrag
-                          watchChildrenUpdates
+                          preserveOrder={false}
                           animationDuration={200}
                           props={{ className: "space-y-2" }}
-                          onPositionChange={({ newItems }) => {
-                            const reorderedSelections = newItems.flatMap((item) => (isValidElement(item) ? advancedSelections.find(({ id }) => item.key === id)! : []));
+                          onPositionChange={({ newOrder }) => {
+                            const reorderedSelections = newOrder.flatMap((key) => advancedSelections.find(({ id }) => key === id) || []);
                             setAdvancedSelections(reorderedSelections);
                           }}
                         >

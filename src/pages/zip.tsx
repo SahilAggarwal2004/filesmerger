@@ -1,5 +1,5 @@
 import Head from "next/head";
-import { useState, useMemo, isValidElement } from "react";
+import { useState, useMemo } from "react";
 import { BsFileZip } from "react-icons/bs";
 import ReorderList, { ReorderIcon } from "react-reorder-list";
 
@@ -131,11 +131,11 @@ export default function ZipMerger() {
                       <div className="space-y-4">
                         <ReorderList
                           useOnlyIconToDrag
-                          watchChildrenUpdates
+                          preserveOrder={false}
                           animationDuration={200}
                           props={{ className: "space-y-2" }}
-                          onPositionChange={({ newItems }) => {
-                            const reorderedFiles = newItems.flatMap((item) => (isValidElement(item) ? zipFiles.find(({ id }) => item.key === id)! : []));
+                          onPositionChange={({ newOrder }) => {
+                            const reorderedFiles = newOrder.flatMap((key) => zipFiles.find(({ id }) => key === id) || []);
                             setZipFiles(reorderedFiles);
                           }}
                         >
@@ -181,11 +181,11 @@ export default function ZipMerger() {
                       <div className="space-y-4">
                         <ReorderList
                           useOnlyIconToDrag
-                          watchChildrenUpdates
+                          preserveOrder={false}
                           animationDuration={200}
                           props={{ className: "space-y-2" }}
-                          onPositionChange={({ newItems }) => {
-                            const reorderedSelections = newItems.flatMap((item) => (isValidElement(item) ? advancedSelections.find(({ id }) => item.key === id)! : []));
+                          onPositionChange={({ newOrder }) => {
+                            const reorderedSelections = newOrder.flatMap((key) => advancedSelections.find(({ id }) => key === id) || []);
                             setAdvancedSelections(reorderedSelections);
                           }}
                         >
