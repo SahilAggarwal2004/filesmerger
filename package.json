@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint ."
   },
-  "packageManager": "pnpm@10.29.3",
+  "packageManager": "pnpm@10.30.3",
   "dependencies": {
     "client-zip": "^2.5.0",
     "next": "16.1.6",
@@ -16,7 +16,7 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-icons": "^5.5.0",
-    "react-reorder-list": "^0.10.1",
+    "react-reorder-list": "^0.10.2",
     "streamsaver": "^2.0.6",
     "unzipit": "^1.4.3"
   },
@@ -28,7 +28,7 @@
     "@types/node": "^25",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/serviceworker": "^0.0.189",
+    "@types/serviceworker": "^0.0.192",
     "@types/streamsaver": "^2.0.5",
     "eslint": "^9.39.2",
     "eslint-config-next": "16.1.6",
