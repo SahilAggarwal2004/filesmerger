@@ -8,7 +8,7 @@ import FileDropZone from "@/components/FileDropZone";
 import { audioFormatDescriptions, audioFormats, constraints, modes } from "@/constants";
 import { combineAudioBuffers, encodeToFormat, formatDuration, loadAudioBuffer, loadAudios } from "@/lib/audio";
 import { calcSize, download, formatFileSize, generateId, normalize } from "@/lib/utils";
-import { LoadedAudio, AudioSelections, AudioFormat, AudioSegment } from "@/types";
+import type { LoadedAudio, AudioSelections, AudioFormat, AudioSegment } from "@/types";
 
 const { volumeConstraints, rateConstraints, startAtConstraints, bitrateConstraints } = constraints;
 
@@ -66,7 +66,7 @@ export default function AudioMerger() {
         }
       } else
         for (const { audioIndex, range, startAt = 0, volume, rate } of advancedSelections) {
-          const buffer = await loadAudioBuffer(audioContext, loadedAudios[audioIndex], range, rate);
+          const buffer = await loadAudioBuffer(audioContext, loadedAudios[audioIndex]!, range, rate);
           segments.push({ buffer, startTime: startAt, volume });
         }
 

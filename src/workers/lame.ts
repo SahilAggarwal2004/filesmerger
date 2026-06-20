@@ -4,7 +4,7 @@ self.onmessage = function (e) {
   const { channelData, sampleRate, numberOfChannels, length, bitrateValue } = e.data;
 
   const encoder = new lamejs.Mp3Encoder(numberOfChannels, sampleRate, bitrateValue);
-  const mp3Data = [];
+  const mp3Data: Array<Uint8Array<ArrayBufferLike>> = [];
   const chunkSize = 1152;
   let samplesProcessed = 0;
 

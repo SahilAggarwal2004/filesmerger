@@ -1,4 +1,5 @@
-import { CacheFirst, ExpirationPlugin, NetworkFirst, NetworkOnly, PrecacheEntry, RangeRequestsPlugin, Serwist, SerwistGlobalConfig, StaleWhileRevalidate } from "serwist";
+import { CacheFirst, ExpirationPlugin, NetworkFirst, NetworkOnly, RangeRequestsPlugin, Serwist, StaleWhileRevalidate } from "serwist";
+import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {

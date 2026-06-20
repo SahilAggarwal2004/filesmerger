@@ -1,5 +1,5 @@
-import { LoadedAudio, AudioFormat, AudioSegment } from "@/types";
-import { generateId } from "./utils";
+import type { LoadedAudio, AudioFormat, AudioSegment } from "@/types";
+import { generateId } from "@/lib/utils";
 
 async function audioBufferToMp3(buffer: AudioBuffer, bitrateValue: number) {
   const numberOfChannels = Math.min(buffer.numberOfChannels, 2);
@@ -10,7 +10,7 @@ async function audioBufferToMp3(buffer: AudioBuffer, bitrateValue: number) {
   for (let i = 0; i < numberOfChannels; i++) channelData.push(buffer.getChannelData(i));
 
   return new Promise<ArrayBuffer>((resolve, reject) => {
-    const worker = new Worker(new URL("../workers/lame.ts", import.meta.url));
+    const worker = new Worker(new URL("@/workers/lame.ts", import.meta.url));
 
     worker.onmessage = (e) => {
       resolve(e.data);
@@ -68,7 +68,7 @@ function audioBufferToWav(buffer: AudioBuffer) {
   let offset = 44;
   for (let i = 0; i < length; i++)
     for (let channel = 0; channel < numberOfChannels; channel++) {
-      const sample = Math.max(-1, Math.min(1, buffer.getChannelData(channel)[i]));
+      const sample = Math.max(-1, Math.min(1, buffer.getChannelData(channel)[i]!));
       view.setInt16(offset, sample * 0x7fff, true);
       offset += 2;
     }
@@ -102,7 +102,7 @@ function changeAudioRate(ctx: AudioContext, buffer: AudioBuffer, rate: number) {
 export function combineAudioBuffers(ctx: AudioContext, segments: AudioSegment[]) {
   if (!segments.length) return null;
 
-  const sampleRate = segments[0].buffer.sampleRate;
+  const sampleRate = segments[0]!.buffer.sampleRate;
   const numberOfChannels = Math.max(...segments.map((s) => s.buffer.numberOfChannels));
   const totalLength = Math.max(...segments.map((s) => Math.floor((s.startTime + s.buffer.duration) * sampleRate)));
   const combinedBuffer = ctx.createBuffer(numberOfChannels, totalLength, sampleRate);
@@ -114,7 +114,7 @@ export function combineAudioBuffers(ctx: AudioContext, segments: AudioSegment[])
       const startSample = Math.floor(startTime * sampleRate);
       for (let i = 0; i < buffer.length; i++) {
         const targetIndex = startSample + i;
-        if (targetIndex < combinedData.length) combinedData[targetIndex] += channelData[i] * volume;
+        if (targetIndex < combinedData.length) combinedData[targetIndex]! += channelData[i]! * volume;
       }
     });
   }
@@ -163,16 +163,8 @@ export async function loadAudios(files: FileList) {
 }
 
 function parseTimeRange(range: string, duration: number) {
-  if (!range.trim()) return { start: 0, end: duration };
-  try {
-    const parts = range.split("-").map((p) => p.trim());
-    const start = +parts[0] || 0;
-    const end = +parts[1] || duration;
-    return { start: Math.max(0, start), end: Math.min(duration, end) };
-  } catch (error) {
-    console.error("Error parsing time range:", error);
-    return { start: 0, end: duration };
-  }
+  const [start = "", end = ""] = range.split("-").map((p) => p.trim());
+  return { start: Math.max(0, +start || 0), end: Math.min(duration, +end || duration) };
 }
 
 function trimAudioBuffer(ctx: AudioContext, buffer: AudioBuffer, start: number, end: number) {
@@ -184,7 +176,7 @@ function trimAudioBuffer(ctx: AudioContext, buffer: AudioBuffer, start: number, 
   for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
     const channelData = buffer.getChannelData(channel);
     const trimmedData = trimmedBuffer.getChannelData(channel);
-    for (let i = 0; i < length; i++) trimmedData[i] = channelData[startSample + i];
+    for (let i = 0; i < length; i++) trimmedData[i] = channelData[startSample + i]!;
   }
 
   return trimmedBuffer;

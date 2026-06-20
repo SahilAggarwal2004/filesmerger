@@ -6,7 +6,7 @@ import ReorderList, { ReorderIcon } from "react-reorder-list";
 import { modes, rotationOptions, rotationOptionDescriptions } from "@/constants";
 import { mergePdfs } from "@/lib/pdf";
 import { calcSize, download, generateId } from "@/lib/utils";
-import { PDFFile, PDFSelections } from "@/types";
+import type { PDFFile, PDFSelections } from "@/types";
 import FileDropZone from "@/components/FileDropZone";
 
 export default function PdfMerger() {
@@ -46,7 +46,7 @@ export default function PdfMerger() {
         const { range, rotation } = simpleSelections[id] || {};
         await handleFile(file, range, rotation);
       }
-    else for (const { pdfIndex, range, rotation } of advancedSelections) await handleFile(pdfFiles[pdfIndex].file, range, rotation);
+    else for (const { pdfIndex, range, rotation } of advancedSelections) await handleFile(pdfFiles[pdfIndex]!.file, range, rotation);
     const blob = new Blob([(await mergedPdf.save()) as BlobPart], { type: "application/pdf" });
     setMergedPdfUrl(URL.createObjectURL(blob));
   }

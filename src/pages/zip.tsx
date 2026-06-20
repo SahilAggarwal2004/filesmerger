@@ -5,7 +5,7 @@ import ReorderList, { ReorderIcon } from "react-reorder-list";
 
 import { modes } from "@/constants";
 import { calcSize, formatFileSize, generateId } from "@/lib/utils";
-import { FileToProcess, ZipFile, ZipSelections } from "@/types";
+import type { FileToProcess, ZipFile, ZipSelections } from "@/types";
 import FileDropZone from "@/components/FileDropZone";
 import { mergeZips } from "@/lib/zip";
 
@@ -62,7 +62,7 @@ export default function ZipMerger() {
         }));
       else
         filesToProcess = advancedSelections.map(({ fileIndex, extractTo, include }) => {
-          const { file, isZip } = zipFiles[fileIndex];
+          const { file, isZip } = zipFiles[fileIndex]!;
           return { file, isZip, extractTo, include };
         });
 

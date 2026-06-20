@@ -1,9 +1,9 @@
 import { toolsInfo } from "@/constants";
 import { formatFileSize } from "@/lib/utils";
-import { FileDropZoneProps } from "@/types";
+import type { FileDropZoneProps } from "@/types";
 
 export default function FileDropZone({ tool, Icon, handleFileChange, totalSize }: FileDropZoneProps) {
-  const { label, mimetype } = toolsInfo[tool];
+  const { label, mimetype } = toolsInfo[tool]!;
 
   return (
     <div className="space-y-2">

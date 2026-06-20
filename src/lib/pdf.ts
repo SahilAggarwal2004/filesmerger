@@ -19,15 +19,15 @@ export async function mergePdfs() {
 
 function rangeToPages(range: string) {
   if (!range) return null;
+
   return range
     .split(",")
     .flatMap((part) => {
-      if (part.includes("-")) {
-        const [start, end] = part.split("-").map((n) => +n.trim());
-        const step = start <= end ? 1 : -1;
-        return Array.from({ length: Math.abs(end - start) + 1 }, (_, i) => start + i * step - 1);
-      }
-      return [+part.trim() - 1];
+      if (!part.includes("-")) return [+part.trim() - 1];
+
+      const [start = 0, end = 0] = part.split("-").map((n) => +n.trim());
+      const step = start <= end ? 1 : -1;
+      return Array.from({ length: Math.abs(end - start) + 1 }, (_, i) => start + i * step - 1);
     })
     .filter((n) => !isNaN(n) && n >= 0);
 }

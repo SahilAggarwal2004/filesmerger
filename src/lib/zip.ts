@@ -1,6 +1,6 @@
 import { unzip } from "unzipit";
 import { makeZip } from "client-zip";
-import { FileToProcess, ZipEntry } from "@/types";
+import type { FileToProcess, ZipEntry } from "@/types";
 
 let streamSaver;
 if (typeof window !== "undefined") {
@@ -14,7 +14,7 @@ function resolveNameCollision(name: string, existingNames: Set<string>): string 
   }
 
   const pathParts = name.split("/");
-  const firstPart = pathParts[0];
+  const firstPart = pathParts[0]!;
   const restParts = pathParts.slice(1);
 
   let extensionIndex = firstPart.lastIndexOf(".");
@@ -71,7 +71,7 @@ export async function mergeZips(filesToProcess: FileToProcess[], onProgress: (cu
   const total = filesToProcess.length;
 
   for (let i = 0; i < total; i++) {
-    const { file, extractTo, include } = filesToProcess[i];
+    const { file, extractTo, include } = filesToProcess[i]!;
     try {
       const isZip = file.type === "application/zip" || file.name.toLowerCase().endsWith(".zip");
       if (isZip) {

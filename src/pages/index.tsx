@@ -15,7 +15,7 @@ export default function Home() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {tools.map((tool) => {
-              const { description, href, title } = toolsInfo[tool];
+              const { description, href, title } = toolsInfo[tool]!;
               return (
                 <Link
                   key={href}
