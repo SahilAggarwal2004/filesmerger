@@ -42,7 +42,7 @@ export type FileDropZoneProps = {
 // constants.ts
 export type Constraint = { min?: number; max?: number; step: number };
 
-export type Constraints = { [key: string]: Constraint };
+export type Constraints = Record<string, Constraint>;
 
 export type Tools = {
   [key: string]: { title: string; label: string; description: string; href: string; mimetype: string };
@@ -55,14 +55,7 @@ export type AudioSegment = { buffer: AudioBuffer; startTime: number; volume?: nu
 
 export type AudioSelections = FileSelections<
   { range?: string; volume?: number; rate?: number },
-  {
-    id: string;
-    audioIndex: number;
-    range?: string;
-    startAt?: number;
-    volume?: number;
-    rate?: number;
-  }
+  { id: string; audioIndex: number; range?: string; startAt?: number; volume?: number; rate?: number }
 >;
 
 export type LoadedAudio = {
@@ -75,11 +68,33 @@ export type LoadedAudio = {
 };
 
 // pages/image.tsx
+export type CanvasCoordinate = { x: number; y: number };
+
 export type Color = keyof typeof colorDescriptions;
 
 export type DimensionStrategy = keyof typeof dimensionStrategyDescriptions;
 
 export type Dimensions = { width: number; height: number };
+
+export type DrawOperation = CanvasCoordinate & Dimensions & { image: ImageElement };
+
+export type Grid = GridCell[][];
+
+export type GridCell = ProcessedImage | null;
+
+export type GridCoordinate = { row: number; col: number };
+
+export type GridGroup = { items: ProcessedImage[]; sharedSize: number; secondarySizes: number[]; totalSecondary: number };
+
+export type GridMergeOptions = {
+  processedImages: ProcessedImage[];
+  mergeDirection: MergeDirection;
+  gridCount: number;
+  dimensionStrategy: DimensionStrategy;
+  backgroundColor: string;
+  outputFormat: string;
+  quality: number;
+};
 
 export type ImageElement = HTMLCanvasElement | HTMLImageElement;
 
@@ -107,11 +122,7 @@ export type MergeDirection = (typeof mergeDirections)[number];
 
 export type MergedImage = { url: string; size: number } | null;
 
-export type ProcessedImage = {
-  element: ImageElement;
-  width: number;
-  height: number;
-};
+export type ProcessedImage = Dimensions & { element: ImageElement };
 
 export type Transform =
   | { type: "resize"; scaleFactor?: number }

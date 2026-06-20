@@ -19,13 +19,22 @@ import {
   colors,
   colorDescriptions,
 } from "@/constants";
-import { getDimensionsAfterTransform, isVerticalRotation, loadImages, processAdvancedImage } from "@/lib/image";
-import { calcSize, download, formatFileSize, minmax, sum, generateId, normalize } from "@/lib/utils";
-import { ImageFormat, LoadedImage, MergedImage, MergeDirection, DimensionStrategy, ImageSelections, ProcessedImage, TransformOption, Transform, Dimensions } from "@/types";
+import { getDimensionsAfterTransform, isVerticalRotation, loadImages, mergeToCanvas, processAdvancedImage } from "@/lib/image";
+import { calcSize, download, formatFileSize, generateId, normalize } from "@/lib/utils";
+import type { ImageFormat, LoadedImage, MergedImage, MergeDirection, DimensionStrategy, ImageSelections, ProcessedImage, TransformOption, Transform, Dimensions } from "@/types";
 import FileDropZone from "@/components/FileDropZone";
 
-const { scaleConstraints, targetWidthConstraints, targetHeightConstraints, cropXConstraints, cropYConstraints, cropWidthConstraints, cropHeightConstraints, qualityConstraints } =
-  constraints;
+const {
+  gridCountConstraints,
+  scaleConstraints,
+  targetWidthConstraints,
+  targetHeightConstraints,
+  cropXConstraints,
+  cropYConstraints,
+  cropWidthConstraints,
+  cropHeightConstraints,
+  qualityConstraints,
+} = constraints;
 
 function TransformStep({
   transform,
@@ -183,26 +192,25 @@ function AdvancedImageSelection({
   onRemove: () => void;
 }) {
   const { imageIndex, rotation, transforms } = selection;
-  const { element } = loadedImages[imageIndex];
-  const { width, height } = getDimensionsAfterStep(transforms.length - 1);
+  const { element } = loadedImages[imageIndex]!;
 
-  function getDimensionsAfterStep(stepIndex: number) {
+  const stepDimensions = useMemo(() => {
     let width = element.width;
     let height = element.height;
-
     if (isVerticalRotation(rotation)) [width, height] = [height, width];
 
-    for (let i = 0; i <= stepIndex; i++) {
-      const transform = transforms[i];
-      if (!transform) break;
-
-      const dimensions = getDimensionsAfterTransform(width, height, transform);
-      width = dimensions.width;
-      height = dimensions.height;
+    const result: Dimensions[] = [{ width, height }];
+    for (const t of transforms) {
+      const next = getDimensionsAfterTransform(width, height, t);
+      width = next.width;
+      height = next.height;
+      result.push({ width, height });
     }
 
-    return { width, height };
-  }
+    return result;
+  }, [element.width, element.height, rotation, transforms]);
+
+  const { width, height } = stepDimensions.at(-1)!;
 
   function addTransform(type: TransformOption) {
     const newTransform: Transform = { type };
@@ -212,7 +220,7 @@ function AdvancedImageSelection({
 
   function updateTransform(index: number, update: Partial<Transform>) {
     const newTransforms = [...transforms];
-    newTransforms[index] = { ...newTransforms[index], ...update };
+    newTransforms[index] = { ...newTransforms[index], ...update } as Transform;
     onUpdate({ transforms: newTransforms });
   }
 
@@ -284,7 +292,7 @@ function AdvancedImageSelection({
                     <TransformStep
                       transform={transform}
                       transformIndex={index}
-                      dimensions={getDimensionsAfterStep(index - 1)}
+                      dimensions={stepDimensions[index]!}
                       onUpdate={(update) => updateTransform(index, update)}
                       onRemove={() => removeTransform(index)}
                     />
@@ -327,13 +335,15 @@ export default function ImageMerger() {
   const [advancedSelections, setAdvancedSelections] = useState<ImageSelections["advanced"]>([]);
   const [mergedImage, setMergedImage] = useState<MergedImage>(null);
   const [mergeDirection, setMergeDirection] = useState<MergeDirection>("vertical");
+  const [gridCount, setGridCount] = useState(1);
   const [dimensionStrategy, setDimensionStrategy] = useState<DimensionStrategy>("minimum");
   const [outputFormat, setOutputFormat] = useState<ImageFormat>("jpeg");
   const [quality, setQuality] = useState(0.8);
   const [backgroundColor, setBackgroundColor] = useState("transparent");
 
   const totalSize = useMemo(() => calcSize(loadedImages), [loadedImages]);
-  const isOriginal = dimensionStrategy === "original";
+  const activeItemCount = selectedMode === "simple" ? loadedImages.length : advancedSelections.length;
+  const supportsBackgroundFill = dimensionStrategy === "original" || dimensionStrategy === "uniform";
 
   const handleAdvancedUpdate = (id: string, update: Partial<AdvancedSelection<ImageSelections>>) =>
     setAdvancedSelections((prev) => prev.map((sel) => (sel.id === id ? { ...sel, ...update } : sel)));
@@ -352,72 +362,32 @@ export default function ImageMerger() {
     setAdvancedSelections([]);
   }
 
-  function mergeImages() {
-    const canvas = document.createElement("canvas");
-    const isHorizontal = mergeDirection === "horizontal";
-    const isMinimum = dimensionStrategy === "minimum";
+  async function mergeImages() {
+    try {
+      const processedImages: ProcessedImage[] =
+        selectedMode === "simple"
+          ? loadedImages.map(({ element }) => ({ element, width: element.width, height: element.height }))
+          : advancedSelections.map((selection) => processAdvancedImage(loadedImages[selection.imageIndex]!.element, selection));
 
-    let processedImages: ProcessedImage[];
-
-    if (selectedMode === "simple") processedImages = loadedImages.map(({ element }) => ({ element, width: element.width, height: element.height }));
-    else processedImages = advancedSelections.map((selection) => processAdvancedImage(loadedImages[selection.imageIndex].element, selection)).filter((image) => image !== null);
-
-    if (!processedImages.length) return;
-
-    let canvasWidth: number, canvasHeight: number, widths: number[], heights: number[];
-    if (isHorizontal) {
-      canvasHeight = isMinimum ? Infinity : 0;
-      processedImages.forEach(({ height }) => (canvasHeight = minmax(canvasHeight, height, isMinimum)));
-      widths = processedImages.map(({ width, height }) => (isOriginal ? width : (width * canvasHeight) / height));
-      canvasWidth = sum(widths);
-    } else {
-      canvasWidth = isMinimum ? Infinity : 0;
-      processedImages.forEach(({ width }) => (canvasWidth = minmax(canvasWidth, width, isMinimum)));
-      heights = processedImages.map(({ width, height }) => (isOriginal ? height : (height * canvasWidth) / width));
-      canvasHeight = sum(heights);
+      const blob = await mergeToCanvas({ processedImages, mergeDirection, gridCount, dimensionStrategy, backgroundColor, outputFormat, quality });
+      setMergedImage({ url: URL.createObjectURL(blob), size: blob.size });
+    } catch (error) {
+      console.error(error);
+      alert("Failed to merge images. Please try again.");
     }
-
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return alert("Unable to create canvas context. Please try a different browser.");
-
-    if (isOriginal && backgroundColor !== "transparent") {
-      ctx.fillStyle = backgroundColor;
-      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-    }
-
-    if (isHorizontal) {
-      let offset = 0;
-      processedImages.forEach(({ element, height }, index) => {
-        if (isOriginal) ctx.drawImage(element, offset, (canvasHeight - height) / 2, widths[index], height);
-        else ctx.drawImage(element, offset, 0, widths[index], canvasHeight);
-        offset += widths[index];
-      });
-    } else {
-      let offset = 0;
-      processedImages.forEach(({ element, width }, index) => {
-        if (isOriginal) ctx.drawImage(element, (canvasWidth - width) / 2, offset, width, heights[index]);
-        else ctx.drawImage(element, 0, offset, canvasWidth, heights[index]);
-        offset += heights[index];
-      });
-    }
-
-    canvas.toBlob(
-      (blob) => {
-        if (blob) setMergedImage({ url: URL.createObjectURL(blob), size: blob.size });
-        else alert("Failed to create image. Please try again with different images or format.");
-      },
-      `image/${outputFormat}`,
-      outputFormat === "png" ? undefined : quality,
-    );
   }
 
   function clearAll() {
     setLoadedImages([]);
     setAdvancedSelections([]);
     setMergedImage(null);
+    setGridCount(1);
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (gridCount > activeItemCount) setGridCount(Math.max(1, activeItemCount));
+  }, [activeItemCount, gridCount]);
 
   useEffect(() => {
     return () => {
@@ -547,6 +517,22 @@ export default function ImageMerger() {
                     </div>
                   </div>
                   <div>
+                    <label className="block text-sm font-medium mb-2 text-slate-700 dark:text-slate-300">Layout Density</label>
+
+                    <input
+                      type="range"
+                      {...gridCountConstraints}
+                      max={Math.max(1, activeItemCount)}
+                      value={gridCount}
+                      onChange={(e) => setGridCount(Number(e.target.value))}
+                      className="w-full"
+                    />
+
+                    <p className="text-xs text-slate-500 mt-1">
+                      {gridCount} strip{gridCount > 1 ? "s" : ""}
+                    </p>
+                  </div>
+                  <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Dimension Handling</label>
                     <div className="space-y-2">
                       {dimensionStrategies.map((strategy) => (
@@ -562,7 +548,7 @@ export default function ImageMerger() {
                         </label>
                       ))}
 
-                      {isOriginal && (
+                      {supportsBackgroundFill && (
                         <div className="ml-6 mt-2 flex flex-col space-y-2 xs:space-x-3 xs:space-y-0 xs:flex-row xs:items-center">
                           <label className="block text-sm text-slate-600 dark:text-slate-400">Background Color</label>
                           <div className="flex items-center space-x-3">

@@ -1,7 +1,8 @@
 import type { ImageFormat, DimensionStrategy, AudioFormat, Tools, Constraints, TransformOption, RotationOption, Color } from "./types";
 
 // General
-export const constraints: Constraints = {
+export const constraints = {
+  gridCountConstraints: { min: 1, step: 1 },
   scaleConstraints: { min: 0.001, max: 10, step: 0.001 },
   targetWidthConstraints: { min: 1, step: 1 },
   targetHeightConstraints: { min: 1, step: 1 },
@@ -14,7 +15,7 @@ export const constraints: Constraints = {
   rateConstraints: { min: 0.25, max: 3, step: 0.05 },
   startAtConstraints: { min: 0, step: 0.1 },
   bitrateConstraints: { min: 64, max: 320, step: 32 },
-};
+} satisfies Constraints;
 
 export const modes = ["simple", "advanced"] as const;
 
@@ -64,7 +65,8 @@ export const colors = Object.keys(colorDescriptions) as Color[];
 export const dimensionStrategyDescriptions = {
   minimum: "Minimum dimensions",
   maximum: "Maximum dimensions",
-  original: "Original dimensions with background",
+  original: "Original dimensions with background fill",
+  uniform: "Uniform cells with background fill",
 };
 
 export const dimensionStrategies = Object.keys(dimensionStrategyDescriptions) as DimensionStrategy[];
