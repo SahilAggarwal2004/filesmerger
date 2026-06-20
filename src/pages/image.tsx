@@ -390,6 +390,11 @@ export default function ImageMerger() {
   }, [activeItemCount, gridCount]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setGridCount(1);
+  }, [mergeDirection]);
+
+  useEffect(() => {
     return () => {
       if (mergedImage) URL.revokeObjectURL(mergedImage.url);
     };
@@ -517,7 +522,7 @@ export default function ImageMerger() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2 text-slate-700 dark:text-slate-300">Layout Density</label>
+                    <label className="block text-sm font-medium mb-2 text-slate-700 dark:text-slate-300">Layout</label>
 
                     <input
                       type="range"
@@ -525,11 +530,12 @@ export default function ImageMerger() {
                       max={Math.max(1, activeItemCount)}
                       value={gridCount}
                       onChange={(e) => setGridCount(Number(e.target.value))}
-                      className="w-full"
+                      className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
                     />
 
                     <p className="text-xs text-slate-500 mt-1">
-                      {gridCount} strip{gridCount > 1 ? "s" : ""}
+                      {gridCount} {mergeDirection === "vertical" ? "column" : "row"}
+                      {gridCount > 1 ? "s" : ""}
                     </p>
                   </div>
                   <div>
