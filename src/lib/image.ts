@@ -1,4 +1,4 @@
-import type { Dimensions, DrawOperation, Grid, GridCoordinate, GridGroup, GridMergeOptions, ImageElement, ImageSelections, LoadedImage, ProcessedImage, Transform } from "@/types";
+import type { Dimensions, DrawOperation, Grid, GridGroup, GridMergeOptions, ImageElement, ImageSelections, LoadedImage, ProcessedImage, Transform } from "@/types";
 import { generateId, sum } from "@/lib/utils";
 
 const createGrid = (rows: number, cols: number): Grid => Array.from({ length: rows }, () => Array(cols).fill(null));
@@ -20,24 +20,6 @@ export function getDimensionsAfterTransform(width: number, height: number, trans
       break;
   }
   return { width: Math.max(1, width), height: Math.max(1, height) };
-}
-
-/** Greedy fill: walks the secondary axis first, filling each primary slot in turn. Leftover cells end up bottom-right. */
-function greedyFillGrid(images: ProcessedImage[], numRows: number, numCols: number, isVertical: boolean) {
-  const grid = createGrid(numRows, numCols);
-  const coords: GridCoordinate[] = new Array(images.length);
-  const primaryCount = isVertical ? numRows : numCols;
-
-  images.forEach((image, i) => {
-    const secondary = Math.floor(i / primaryCount);
-    const primary = i % primaryCount;
-    const row = isVertical ? primary : secondary;
-    const col = isVertical ? secondary : primary;
-    grid[row]![col] = image;
-    coords[i] = { row, col };
-  });
-
-  return { grid, coords };
 }
 
 export const isVerticalRotation = (rotation: number) => rotation === 90 || rotation === 270;
@@ -157,14 +139,15 @@ export async function mergeToCanvas(options: GridMergeOptions) {
   const numCols = isVertical ? gridCount : Math.ceil(processedImages.length / gridCount);
   const numRows = isVertical ? Math.ceil(processedImages.length / gridCount) : gridCount;
 
+  // Distribute items using Masonry layout for ALL strategies
+  const grid = masonryFillGrid(processedImages, numRows, numCols, isVertical);
+
   const ops: DrawOperation[] = [];
   let canvasWidth = 0;
   let canvasHeight = 0;
 
   // UNIFORM (Exact grid, stretches to fill max dimensions)
   if (isUniform) {
-    const { coords } = greedyFillGrid(processedImages, numRows, numCols, isVertical);
-
     let cellWidth = 0;
     let cellHeight = 0;
     processedImages.forEach((image) => {
@@ -175,16 +158,16 @@ export async function mergeToCanvas(options: GridMergeOptions) {
     canvasWidth = cellWidth * numCols;
     canvasHeight = cellHeight * numRows;
 
-    processedImages.forEach((image, idx) => {
-      const { row, col } = coords[idx]!;
-      // Force the image to exactly match the cell dimensions (stretching)
-      ops.push({ image: image.element, x: col * cellWidth, y: row * cellHeight, width: cellWidth, height: cellHeight });
-    });
+    // Iterate through the balanced masonry grid positions
+    for (let row = 0; row < numRows; row++) {
+      for (let col = 0; col < numCols; col++) {
+        const image = grid[row]![col];
+        if (image) ops.push({ image: image.element, x: col * cellWidth, y: row * cellHeight, width: cellWidth, height: cellHeight });
+      }
+    }
   }
   // ORIGINAL (Cell-based, centers image & maintains aspect ratio)
   else if (isOriginal) {
-    const { grid } = greedyFillGrid(processedImages, numRows, numCols, isVertical);
-
     const colWidths = Array(numCols).fill(0);
     const rowHeights = Array(numRows).fill(0);
 
@@ -207,7 +190,7 @@ export async function mergeToCanvas(options: GridMergeOptions) {
       for (let col = 0; col < numCols; col++) {
         const image = grid[row]![col];
         if (image) {
-          // Center the image within its designated cell, using its original dimensions
+          // Center the image within its masonry allocated cell
           const cx = currentX + (colWidths[col] - image.width) / 2;
           const cy = currentY + (rowHeights[row] - image.height) / 2;
           ops.push({ image: image.element, x: cx, y: cy, width: image.width, height: image.height });
@@ -219,7 +202,6 @@ export async function mergeToCanvas(options: GridMergeOptions) {
   }
   // MINIMUM & MAXIMUM (Gapless, scales to fit axes)
   else {
-    const grid = masonryFillGrid(processedImages, numRows, numCols, isVertical);
     const result = layoutScaledGroups(grid, numRows, numCols, isVertical, isMinimum);
     ops.push(...result.ops);
     canvasWidth = result.canvasWidth;

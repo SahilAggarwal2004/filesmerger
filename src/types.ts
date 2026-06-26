@@ -82,8 +82,6 @@ export type Grid = GridCell[][];
 
 export type GridCell = ProcessedImage | null;
 
-export type GridCoordinate = { row: number; col: number };
-
 export type GridGroup = { items: ProcessedImage[]; sharedSize: number; secondarySizes: number[]; totalSecondary: number };
 
 export type GridMergeOptions = {
