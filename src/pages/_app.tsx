@@ -4,6 +4,7 @@ import Head from "next/head";
 import Script from "next/script";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import { ToastContainer } from "react-toastify";
 
 import "@/styles/globals.css";
 import { handleVersionUpdate } from "@/lib/update";
@@ -224,6 +225,7 @@ export default function App({ Component, pageProps }: AppProps) {
         <>
           <Navbar />
           <Component router={router} {...pageProps} />
+          <ToastContainer stacked autoClose={3000} pauseOnFocusLoss={false} position="bottom-right" />
         </>
       )}
     </>

@@ -1,4 +1,4 @@
-import type { ImageFormat, DimensionStrategy, AudioFormat, Tools, Constraints, TransformOption, RotationOption, Color } from "./types";
+import type { ImageFormat, DimensionStrategy, AudioFormat, Constraints, TransformOption, RotationOption, Color, Tool, ToolsInfo } from "./types";
 
 // General
 export const constraints = {
@@ -21,38 +21,49 @@ export const modes = ["simple", "advanced"] as const;
 
 export const sizes = { B: 1, KB: 1024, MB: 1048576, GB: 1073741824 }; // In bytes
 
-export const toolsInfo: Tools = {
+const time = { millisecond: 1, second: 1000, minute: 60_000, hour: 3_600_000, day: 86_400_000 };
+
+export const toolsInfo: ToolsInfo = {
   image: {
     title: "Image Merger",
     label: "Image Files",
     description: "Merge multiple images into a single output seamlessly.",
     href: "/image",
-    mimetype: "image/*",
+    extensions: [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg", ".avif"],
   },
   pdf: {
     title: "PDF Merger",
     label: "PDF Files",
     description: "Combine PDFs with full control over page selection and order.",
     href: "/pdf",
-    mimetype: "application/pdf",
+    extensions: [".pdf"],
   },
   audio: {
     title: "Audio Merger",
     label: "Audio Files",
     description: "Merge multiple audio files into a single output seamlessly.",
     href: "/audio",
-    mimetype: ".mp3,.wav,.m4a,.aac,.ogg",
+    extensions: [".mp3", ".wav", ".m4a", ".aac", ".ogg", ".flac", ".opus"],
   },
   zip: {
     title: "ZIP Merger",
     label: "Files",
     description: "Merge ZIP and other files into a single .zip archive.",
     href: "/zip",
-    mimetype: "*/*",
+    extensions: [],
   },
 };
 
-export const tools = Object.keys(toolsInfo);
+export const tools = Object.keys(toolsInfo) as Tool[];
+
+// Share Target
+export const shareTargetCacheName = "filesmerger-shares";
+
+export const shareTargetMaxWaitMs = 1 * time.minute;
+
+export const shareTargetPollIntervalMs = 400 * time.millisecond;
+
+export const shareTargetStaleEntryMaxAgeMs = 5 * time.minute;
 
 // Image
 export const colorDescriptions = {

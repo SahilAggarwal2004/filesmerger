@@ -1,5 +1,6 @@
+import { toolsInfo } from "@/constants";
+import { generateId, hasExtension, sum } from "@/lib/utils";
 import type { Dimensions, DrawOperation, Grid, GridGroup, GridMergeOptions, ImageElement, ImageSelections, LoadedImage, ProcessedImage, Transform } from "@/types";
-import { generateId, sum } from "@/lib/utils";
 
 const createGrid = (rows: number, cols: number): Grid => Array.from({ length: rows }, () => Array(cols).fill(null));
 
@@ -25,14 +26,18 @@ export function getDimensionsAfterTransform(width: number, height: number, trans
 export const isVerticalRotation = (rotation: number) => rotation === 90 || rotation === 270;
 
 function loadImage(file: File) {
-  if (!file.type.startsWith("image/")) return Promise.resolve(null);
+  if (!hasExtension(file, toolsInfo.image.extensions)) return Promise.resolve(null);
 
-  return new Promise<LoadedImage>((resolve) => {
+  return new Promise<LoadedImage | null>((resolve) => {
     const reader = new FileReader();
+
+    reader.onerror = () => resolve(null);
 
     reader.onload = (e) => {
       const image = new Image();
       const src = e.target?.result as string;
+
+      image.onerror = () => resolve(null);
 
       image.onload = () => {
         resolve({
@@ -51,7 +56,7 @@ function loadImage(file: File) {
   });
 }
 
-export function loadImages(files: FileList) {
+export function loadImages(files: FileList | File[]) {
   return Promise.all(Array.from(files).map(loadImage));
 }
 

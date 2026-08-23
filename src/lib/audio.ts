@@ -1,5 +1,6 @@
+import { toolsInfo } from "@/constants";
+import { generateId, hasExtension } from "@/lib/utils";
 import type { LoadedAudio, AudioFormat, AudioSegment } from "@/types";
-import { generateId } from "@/lib/utils";
 
 async function audioBufferToMp3(buffer: AudioBuffer, bitrateValue: number) {
   const numberOfChannels = Math.min(buffer.numberOfChannels, 2);
@@ -139,11 +140,13 @@ export function formatDuration(seconds: number) {
 }
 
 function loadAudio(file: File) {
-  if (!file.type.startsWith("audio/")) return Promise.resolve(null);
+  if (!hasExtension(file, toolsInfo.audio.extensions)) return Promise.resolve(null);
+
   const url = URL.createObjectURL(file);
-  return new Promise<LoadedAudio>((resolve) => {
+  return new Promise<LoadedAudio | null>((resolve) => {
     const audio = new Audio(url);
-    audio.addEventListener("loadedmetadata", () => resolve({ id: generateId(), file, name: file.name, url, size: file.size, duration: audio.duration }));
+    audio.onerror = () => resolve(null);
+    audio.onloadedmetadata = () => resolve({ id: generateId(), file, name: file.name, url, size: file.size, duration: audio.duration });
   });
 }
 
@@ -157,7 +160,7 @@ export async function loadAudioBuffer(ctx: AudioContext, loadedAudio: LoadedAudi
   return buffer;
 }
 
-export async function loadAudios(files: FileList) {
+export async function loadAudios(files: FileList | File[]) {
   const audioPromises = Array.from(files).map((file) => loadAudio(file));
   return await Promise.all(audioPromises);
 }

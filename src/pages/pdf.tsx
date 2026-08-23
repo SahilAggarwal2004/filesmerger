@@ -3,11 +3,12 @@ import { useState, useEffect, useMemo } from "react";
 import { BsFiletypePdf } from "react-icons/bs";
 import ReorderList, { ReorderIcon } from "react-reorder-list";
 
+import FileDropZone from "@/components/FileDropZone";
 import { modes, rotationOptions, rotationOptionDescriptions } from "@/constants";
+import { useShareTargetFiles } from "@/hooks/useShareTargetFiles";
 import { mergePdfs } from "@/lib/pdf";
 import { calcSize, download, generateId } from "@/lib/utils";
 import type { PDFFile, PDFSelections } from "@/types";
-import FileDropZone from "@/components/FileDropZone";
 
 export default function PdfMerger() {
   const [pdfFiles, setPdfFiles] = useState<PDFFile[]>([]);
@@ -15,6 +16,8 @@ export default function PdfMerger() {
   const [simpleSelections, setSimpleSelections] = useState<PDFSelections["simple"]>({});
   const [advancedSelections, setAdvancedSelections] = useState<PDFSelections["advanced"]>([]);
   const [mergedPdfUrl, setMergedPdfUrl] = useState<string | null>(null);
+
+  const sharedFiles = useShareTargetFiles("pdf");
 
   const totalSize = useMemo(() => calcSize(pdfFiles.map(({ file }) => file)), [pdfFiles]);
 
@@ -25,18 +28,20 @@ export default function PdfMerger() {
   const handleAdvancedUpdate = (id: string, update: Partial<AdvancedSelection<PDFSelections>>) =>
     setAdvancedSelections((prev) => prev.map((sel) => (sel.id === id ? { ...sel, ...update } : sel)));
 
-  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files!);
-    if (files.length) {
-      setPdfFiles((prev) => prev.concat(files.map((file) => ({ id: generateId(), file }))));
-      setMergedPdfUrl(null);
-    }
-    event.target.value = "";
+  function addFiles(files: File[]) {
+    setMergedPdfUrl(null);
+    setPdfFiles((prev) => prev.concat(files.map((file) => ({ id: generateId(), file }))));
   }
 
   function removeFile(id: string) {
     setPdfFiles((prev) => prev.filter((file) => file.id !== id));
     setAdvancedSelections([]);
+  }
+
+  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    if (files.length) addFiles(files);
+    event.target.value = "";
   }
 
   async function handleMerge() {
@@ -57,6 +62,10 @@ export default function PdfMerger() {
     setAdvancedSelections([]);
     setMergedPdfUrl(null);
   }
+
+  useEffect(() => {
+    if (sharedFiles.length) addFiles(sharedFiles);
+  }, [sharedFiles]);
 
   useEffect(() => {
     return () => {

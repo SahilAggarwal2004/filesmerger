@@ -1,5 +1,6 @@
 import { CacheFirst, ExpirationPlugin, NetworkFirst, NetworkOnly, RangeRequestsPlugin, Serwist, StaleWhileRevalidate } from "serwist";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
+import "@/service-workers/save-sw";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {

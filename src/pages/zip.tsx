@@ -1,13 +1,14 @@
 import Head from "next/head";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { BsFileZip } from "react-icons/bs";
 import ReorderList, { ReorderIcon } from "react-reorder-list";
 
-import { modes } from "@/constants";
-import { calcSize, formatFileSize, generateId } from "@/lib/utils";
-import type { FileToProcess, ZipFile, ZipSelections } from "@/types";
 import FileDropZone from "@/components/FileDropZone";
+import { modes } from "@/constants";
+import { useShareTargetFiles } from "@/hooks/useShareTargetFiles";
+import { calcSize, formatFileSize, generateId } from "@/lib/utils";
 import { mergeZips } from "@/lib/zip";
+import type { FileToProcess, ZipFile, ZipSelections } from "@/types";
 
 export default function ZipMerger() {
   const [zipFiles, setZipFiles] = useState<ZipFile[]>([]);
@@ -18,33 +19,37 @@ export default function ZipMerger() {
   const [progress, setProgress] = useState<number>(0);
   const [isDownloadComplete, setIsDownloadComplete] = useState(false);
 
+  const sharedFiles = useShareTargetFiles("zip");
+
   const totalSize = useMemo(() => calcSize(zipFiles.map(({ file }) => file)), [zipFiles]);
 
   const handleAdvancedUpdate = (id: string, update: Partial<AdvancedSelection<ZipSelections>>) =>
     setAdvancedSelections((prev) => prev.map((sel) => (sel.id === id ? { ...sel, ...update } : sel)));
 
-  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files!);
-    if (files.length) {
-      setZipFiles((prev) =>
-        prev.concat(
-          files.map((file) => ({
-            id: generateId(),
-            file,
-            name: file.name,
-            size: file.size,
-            isZip: file.type === "application/zip" || file.name.toLowerCase().endsWith(".zip"),
-          })),
-        ),
-      );
-      setIsDownloadComplete(false);
-    }
-    event.target.value = "";
+  function addFiles(files: File[]) {
+    setIsDownloadComplete(false);
+    setZipFiles((prev) =>
+      prev.concat(
+        files.map((file) => ({
+          id: generateId(),
+          file,
+          name: file.name,
+          size: file.size,
+          isZip: file.type === "application/zip" || file.name.toLowerCase().endsWith(".zip"),
+        })),
+      ),
+    );
   }
 
   function removeFile(id: string) {
     setZipFiles((prev) => prev.filter((file) => file.id !== id));
     setAdvancedSelections([]);
+  }
+
+  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    if (files.length) addFiles(files);
+    event.target.value = "";
   }
 
   async function handleMerge() {
@@ -93,6 +98,10 @@ export default function ZipMerger() {
     setProgress(0);
     setIsDownloadComplete(false);
   }
+
+  useEffect(() => {
+    if (sharedFiles.length) addFiles(sharedFiles);
+  }, [sharedFiles]);
 
   return (
     <>

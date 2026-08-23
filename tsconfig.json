@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
+    "target": "es2017",
     "module": "esnext",
     "lib": ["DOM", "DOM.Iterable", "ESNext", "WebWorker"],
     "jsx": "react-jsx",
-    "target": "ES2017",
     "types": ["serviceworker", "@serwist/next/typings"],
     "skipLibCheck": true,
     "moduleResolution": "bundler",
@@ -31,6 +31,6 @@
     "allowJs": true,
     "incremental": true
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "next.config.mjs"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules"]
 }

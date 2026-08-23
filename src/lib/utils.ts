@@ -23,6 +23,13 @@ export function formatFileSize(bytes: number) {
 
 export const generateId = () => crypto.randomUUID();
 
+export function hasExtension(file: File, extensions: string[]) {
+  if (!extensions.length) return false;
+
+  const dot = file.name.lastIndexOf(".");
+  return dot !== -1 && extensions.includes(file.name.slice(dot).toLowerCase());
+}
+
 export const normalize = (value: string, { min = -Infinity, max = Infinity }: Constraint, defaultValue?: number) => (value ? Math.min(Math.max(+value, min), max) : defaultValue);
 
 export const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);

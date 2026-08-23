@@ -3,7 +3,7 @@ import { formatFileSize } from "@/lib/utils";
 import type { FileDropZoneProps } from "@/types";
 
 export default function FileDropZone({ tool, Icon, handleFileChange, totalSize }: FileDropZoneProps) {
-  const { label, mimetype } = toolsInfo[tool]!;
+  const { label, extensions } = toolsInfo[tool]!;
 
   return (
     <div className="space-y-2">
@@ -28,7 +28,7 @@ export default function FileDropZone({ tool, Icon, handleFileChange, totalSize }
             </p>
             <p className="text-xs text-slate-500 dark:text-slate-400">Select multiple {label.toLowerCase()}</p>
           </div>
-          <input type="file" className="hidden" accept={mimetype} multiple onChange={handleFileChange} />
+          <input type="file" className="hidden" accept={extensions.length ? extensions.join(",") : "*/*"} multiple onChange={handleFileChange} />
         </label>
       </div>
       {totalSize > 0 && <p className="text-sm text-slate-500 dark:text-slate-400">Total size: {formatFileSize(totalSize)}</p>}

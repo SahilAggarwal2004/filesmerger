@@ -1,5 +1,7 @@
 import fs from "fs";
 import withSerwistInit from "@serwist/next";
+import type { NextConfig } from "next";
+
 import packageJSON from "./package.json" with { type: "json" };
 
 const pages = ["/", "/image", "/pdf", "/audio", "/zip"];
@@ -7,7 +9,7 @@ const resources = ["https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.all.js"];
 const revision = Date.now().toString();
 
 const withPWA = withSerwistInit({
-  swSrc: "src/sw.ts",
+  swSrc: "src/service-workers/sw.ts",
   swDest: "public/sw.js",
   exclude: [/public\/sw.js/],
   disable: process.env.NODE_ENV !== "production",
@@ -16,12 +18,12 @@ const withPWA = withSerwistInit({
   additionalPrecacheEntries: pages.concat(resources).map((url) => ({ url, revision })),
 });
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+const nextConfig: NextConfig = {
+  reactCompiler: true,
   reactStrictMode: true,
   experimental: {
-    nextScriptWorkers: true,
-  },
+    useTypeScriptCli: true,
+  }
 };
 
 const manifestPath = "./public/manifest.json";

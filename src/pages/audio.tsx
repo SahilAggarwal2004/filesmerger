@@ -6,6 +6,7 @@ import ReorderList, { ReorderIcon } from "react-reorder-list";
 
 import FileDropZone from "@/components/FileDropZone";
 import { audioFormatDescriptions, audioFormats, constraints, modes } from "@/constants";
+import { useShareTargetFiles } from "@/hooks/useShareTargetFiles";
 import { combineAudioBuffers, encodeToFormat, formatDuration, loadAudioBuffer, loadAudios } from "@/lib/audio";
 import { calcSize, download, formatFileSize, generateId, normalize } from "@/lib/utils";
 import type { LoadedAudio, AudioSelections, AudioFormat, AudioSegment } from "@/types";
@@ -25,6 +26,8 @@ export default function AudioMerger() {
   const createdUrls = useRef<Set<string>>(new Set());
   const playingAudios = useRef<Map<string, HTMLAudioElement>>(new Map());
 
+  const sharedFiles = useShareTargetFiles("audio");
+
   const totalSize = useMemo(() => calcSize(loadedAudios), [loadedAudios]);
 
   const handleSimpleUpdate = (id: string, update: Partial<SimpleSelection<AudioSelections>>) => setSimpleSelections((prev) => ({ ...prev, [id]: { ...prev[id], ...update } }));
@@ -32,18 +35,22 @@ export default function AudioMerger() {
   const handleAdvancedUpdate = (id: string, update: Partial<AdvancedSelection<AudioSelections>>) =>
     setAdvancedSelections((prev) => prev.map((sel) => (sel.id === id ? { ...sel, ...update } : sel)));
 
-  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const { files } = event.target;
-    if (files?.length) {
-      loadAudios(files).then((audios) => setLoadedAudios((prev) => prev.concat(audios.filter((audio) => audio !== null))));
-      setMergedAudioUrl(null);
-    }
-    event.target.value = "";
+  function addFiles(files: FileList | File[]) {
+    setMergedAudioUrl(null);
+    loadAudios(files).then((audios) => {
+      setLoadedAudios((prev) => prev.concat(audios.filter((audio) => audio !== null)));
+    });
   }
 
   function removeFile(id: string) {
     setLoadedAudios((prev) => prev.filter((file) => file.id !== id));
     setAdvancedSelections([]);
+  }
+
+  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const { files } = event.target;
+    if (files?.length) addFiles(files);
+    event.target.value = "";
   }
 
   async function handleMerge() {
@@ -124,6 +131,10 @@ export default function AudioMerger() {
   }
 
   useEffect(() => clearAll, []);
+
+  useEffect(() => {
+    if (sharedFiles.length) addFiles(sharedFiles);
+  }, [sharedFiles]);
 
   useEffect(() => {
     return () => {

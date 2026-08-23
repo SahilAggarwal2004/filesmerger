@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { BsImages } from "react-icons/bs";
 import ReorderList, { ReorderIcon } from "react-reorder-list";
 
+import FileDropZone from "@/components/FileDropZone";
 import {
   imageFormatDescriptions,
   imageFormats,
@@ -19,10 +20,10 @@ import {
   colors,
   colorDescriptions,
 } from "@/constants";
+import { useShareTargetFiles } from "@/hooks/useShareTargetFiles";
 import { getDimensionsAfterTransform, isVerticalRotation, loadImages, mergeToCanvas, processAdvancedImage } from "@/lib/image";
 import { calcSize, download, formatFileSize, generateId, normalize } from "@/lib/utils";
 import type { ImageFormat, LoadedImage, MergedImage, MergeDirection, DimensionStrategy, ImageSelections, ProcessedImage, TransformOption, Transform, Dimensions } from "@/types";
-import FileDropZone from "@/components/FileDropZone";
 
 const {
   gridCountConstraints,
@@ -341,6 +342,8 @@ export default function ImageMerger() {
   const [quality, setQuality] = useState(0.8);
   const [backgroundColor, setBackgroundColor] = useState("transparent");
 
+  const sharedFiles = useShareTargetFiles("image");
+
   const totalSize = useMemo(() => calcSize(loadedImages), [loadedImages]);
   const activeItemCount = selectedMode === "simple" ? loadedImages.length : advancedSelections.length;
   const supportsBackgroundFill = dimensionStrategy === "original" || dimensionStrategy === "uniform";
@@ -348,13 +351,11 @@ export default function ImageMerger() {
   const handleAdvancedUpdate = (id: string, update: Partial<AdvancedSelection<ImageSelections>>) =>
     setAdvancedSelections((prev) => prev.map((sel) => (sel.id === id ? { ...sel, ...update } : sel)));
 
-  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const { files } = event.target;
-    if (files?.length) {
-      setMergedImage(null);
-      loadImages(files).then((images) => setLoadedImages((prev) => prev.concat(images.filter((img) => img !== null))));
-    }
-    event.target.value = "";
+  function addFiles(files: FileList | File[]) {
+    setMergedImage(null);
+    loadImages(files).then((images) => {
+      setLoadedImages((prev) => prev.concat(images.filter((img) => img !== null)));
+    });
   }
 
   function removeFile(id: string) {
@@ -362,7 +363,13 @@ export default function ImageMerger() {
     setAdvancedSelections([]);
   }
 
-  async function mergeImages() {
+  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const { files } = event.target;
+    if (files?.length) addFiles(files);
+    event.target.value = "";
+  }
+
+  async function handleMerge() {
     try {
       const processedImages: ProcessedImage[] =
         selectedMode === "simple"
@@ -383,6 +390,10 @@ export default function ImageMerger() {
     setMergedImage(null);
     setGridCount(1);
   }
+
+  useEffect(() => {
+    if (sharedFiles.length) addFiles(sharedFiles);
+  }, [sharedFiles]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -617,7 +628,7 @@ export default function ImageMerger() {
               <div className="flex flex-wrap gap-3">
                 <button
                   disabled={selectedMode === "simple" ? !loadedImages.length : !advancedSelections.length}
-                  onClick={mergeImages}
+                  onClick={handleMerge}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white rounded-lg shadow-sm transition-colors disabled:cursor-not-allowed"
                 >
                   Merge Images

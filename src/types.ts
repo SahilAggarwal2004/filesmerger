@@ -14,7 +14,9 @@ import {
 
 declare global {
   type Mode = (typeof modes)[number];
-  type FileSelections<S = unknown, A = unknown> = { [key in Mode]: key extends "simple" ? Record<string, S> : Array<A> };
+  type FileSelections<S = unknown, A = unknown> = {
+    [key in Mode]: key extends "simple" ? Record<string, S> : Array<A>;
+  };
   type SimpleSelection<T extends FileSelections> = T["simple"][string];
   type AdvancedSelection<T extends FileSelections> = T["advanced"][number];
 
@@ -44,9 +46,17 @@ export type Constraint = { min?: number; max?: number; step: number };
 
 export type Constraints = Record<string, Constraint>;
 
-export type Tools = {
-  [key: string]: { title: string; label: string; description: string; href: string; mimetype: string };
+export type Tool = "image" | "pdf" | "audio" | "zip";
+
+export type ToolInfo = {
+  title: string;
+  label: string;
+  description: string;
+  href: string;
+  extensions: string[];
 };
+
+export type ToolsInfo = Record<Tool, ToolInfo>;
 
 // pages/audio.tsx
 export type AudioFormat = keyof typeof audioFormatDescriptions;
