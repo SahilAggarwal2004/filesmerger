@@ -21,7 +21,7 @@
     "allowUnusedLabels": false,
     "noUncheckedSideEffectImports": true,
     "allowUnreachableCode": false,
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "noUncheckedIndexedAccess": true,
     "noPropertyAccessFromIndexSignature": true,
     "erasableSyntaxOnly": true,
