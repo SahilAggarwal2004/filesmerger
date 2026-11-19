@@ -5,6 +5,7 @@ import { BsImages } from "react-icons/bs";
 import ReorderList, { ReorderIcon } from "react-reorder-list";
 
 import FileDropZone from "@/components/FileDropZone";
+import ImageEditor from "@/components/ImageEditor";
 import {
   imageFormatDescriptions,
   imageFormats,
@@ -21,9 +22,9 @@ import {
   colorDescriptions,
 } from "@/constants";
 import { useShareTargetFiles } from "@/hooks/useShareTargetFiles";
-import { getDimensionsAfterTransform, isVerticalRotation, loadImages, mergeToCanvas, processAdvancedImage } from "@/lib/image";
+import { getDimensionsAfterTransform, getInitialCropRect, isVerticalRotation, loadImages, mergeToCanvas, processAdvancedImage } from "@/lib/image";
 import { calcSize, download, formatFileSize, generateId, normalize } from "@/lib/utils";
-import type { ImageFormat, LoadedImage, MergedImage, MergeDirection, DimensionStrategy, ImageSelections, ProcessedImage, TransformOption, Transform, Dimensions } from "@/types";
+import type { ImageFormat, LoadedImage, MergedImage, MergeDirection, DimensionStrategy, ImageSelections, ProcessedImage, TransformOption, Transform, Dimensions, CropRect, ImageElement } from "@/types";
 
 const {
   gridCountConstraints,
@@ -43,12 +44,14 @@ function TransformStep({
   dimensions,
   onUpdate,
   onRemove,
+  onEditVisually,
 }: {
   transform: Transform;
   transformIndex: number;
   dimensions: Dimensions;
   onUpdate: (update: Partial<Transform>) => void;
   onRemove: () => void;
+  onEditVisually: () => void;
 }) {
   const { width, height } = dimensions;
 
@@ -103,6 +106,12 @@ function TransformStep({
           </div>
         ) : (
           <>
+            <button
+              onClick={onEditVisually}
+              className="w-full px-3 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded shadow-sm"
+            >
+              ✂ Edit visually
+            </button>
             <div className="grid grid-cols-1 2xs:grid-cols-2 gap-2">
               <div>
                 <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Start X (px)</label>
@@ -195,6 +204,11 @@ function AdvancedImageSelection({
   const { imageIndex, rotation, transforms } = selection;
   const { element } = loadedImages[imageIndex]!;
 
+  // `index` is the pipeline position being edited; index === transforms.length means a new crop step.
+  const [editor, setEditor] = useState<{ index: number; source: ImageElement; initialCrop: CropRect } | null>(null);
+  // Number inputs are uncontrolled, so bumping this remounts them to show values changed elsewhere (visual editor, reordering).
+  const [inputsVersion, setInputsVersion] = useState(0);
+
   const stepDimensions = useMemo(() => {
     let width = element.width;
     let height = element.height;
@@ -227,6 +241,30 @@ function AdvancedImageSelection({
 
   function removeTransform(index: number) {
     onUpdate({ transforms: transforms.filter((_, i) => i !== index) });
+    setInputsVersion((v) => v + 1);
+  }
+
+  function openEditor(index: number) {
+    // The editor shows the image exactly as it reaches this step (rotation + all previous steps applied).
+    const { element: source } = processAdvancedImage(element, { ...selection, transforms: transforms.slice(0, index) });
+    const existing = transforms[index];
+    const initialCrop = getInitialCropRect(existing?.type === "crop" ? existing : undefined, source.width, source.height);
+    setEditor({ index, source, initialCrop });
+  }
+
+  function applyCrop({ x, y, width, height }: CropRect) {
+    if (!editor) return;
+
+    const crop = { cropX: x, cropY: y, cropWidth: width, cropHeight: height };
+    if (transforms[editor.index]?.type === "crop") {
+      updateTransform(editor.index, crop);
+    } else {
+      const newTransform: Transform = { type: "crop", fillColor: "transparent", ...crop };
+      onUpdate({ transforms: [...transforms, newTransform] });
+    }
+
+    setInputsVersion((v) => v + 1);
+    setEditor(null);
   }
 
   return (
@@ -284,6 +322,7 @@ function AdvancedImageSelection({
               onPositionChange={({ newOrder }) => {
                 const reorderedTransforms = newOrder.flatMap((key) => transforms[key as number] || []);
                 onUpdate({ transforms: reorderedTransforms });
+                setInputsVersion((v) => v + 1);
               }}
             >
               {transforms.map((transform, index) => (
@@ -291,11 +330,13 @@ function AdvancedImageSelection({
                   <ReorderIcon className="w-4 mt-2 shrink-0" />
                   <div className="flex-1">
                     <TransformStep
+                      key={`${index}-${inputsVersion}`}
                       transform={transform}
                       transformIndex={index}
                       dimensions={stepDimensions[index]!}
                       onUpdate={(update) => updateTransform(index, update)}
                       onRemove={() => removeTransform(index)}
+                      onEditVisually={() => openEditor(index)}
                     />
                   </div>
                 </div>
@@ -313,6 +354,12 @@ function AdvancedImageSelection({
                 + {transformOptionDescriptions[option]}
               </button>
             ))}
+            <button
+              onClick={() => openEditor(transforms.length)}
+              className="px-3 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded shadow-sm"
+            >
+              ✂ Visual Crop
+            </button>
           </div>
         </div>
 
@@ -326,6 +373,8 @@ function AdvancedImageSelection({
       <button onClick={onRemove} className="text-red-500 hover:text-red-700 w-5 mt-2 mx-0.5 2xs:mx-1.5 shrink-0" aria-label="Remove selection">
         ✕
       </button>
+
+      {editor && <ImageEditor image={editor.source} initialCrop={editor.initialCrop} onApply={applyCrop} onCancel={() => setEditor(null)} />}
     </>
   );
 }

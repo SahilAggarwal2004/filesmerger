@@ -1,15 +1,17 @@
-import type { ImageFormat, DimensionStrategy, AudioFormat, Constraints, TransformOption, RotationOption, Color, Tool, ToolsInfo } from "./types";
+import type { AspectRatio, ImageFormat, DimensionStrategy, AudioFormat, Constraints, TransformOption, RotationOption, Color, Tool, ToolsInfo } from "./types";
 
 // General
+export const minImageDimension = 1;
+
 export const constraints = {
   gridCountConstraints: { min: 1, step: 1 },
   scaleConstraints: { min: 0.001, max: 10, step: 0.001 },
-  targetWidthConstraints: { min: 1, step: 1 },
-  targetHeightConstraints: { min: 1, step: 1 },
+  targetWidthConstraints: { min: minImageDimension, step: 1 },
+  targetHeightConstraints: { min: minImageDimension, step: 1 },
   cropXConstraints: { step: 1 },
   cropYConstraints: { step: 1 },
-  cropWidthConstraints: { min: 1, step: 1 },
-  cropHeightConstraints: { min: 1, step: 1 },
+  cropWidthConstraints: { min: minImageDimension, step: 1 },
+  cropHeightConstraints: { min: minImageDimension, step: 1 },
   qualityConstraints: { min: 0.1, max: 1, step: 0.1 },
   volumeConstraints: { min: 0, max: 2, step: 0.1 },
   rateConstraints: { min: 0.25, max: 3, step: 0.05 },
@@ -66,6 +68,20 @@ export const shareTargetPollIntervalMs = 400 * time.millisecond;
 export const shareTargetStaleEntryMaxAgeMs = 5 * time.minute;
 
 // Image
+export const aspectRatioDescriptions = {
+  free: "Free",
+  original: "Original",
+  "1:1": "1:1 (Square)",
+  "4:3": "4:3",
+  "3:4": "3:4",
+  "3:2": "3:2",
+  "2:3": "2:3",
+  "16:9": "16:9",
+  "9:16": "9:16",
+};
+
+export const aspectRatios = Object.keys(aspectRatioDescriptions) as AspectRatio[];
+
 export const colorDescriptions = {
   transparent: "Transparent",
   color: "Color",

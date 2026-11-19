@@ -3,11 +3,16 @@ import type { Constraint, Unit } from "../types";
 
 const { KB, MB, GB } = sizes;
 
-export const bytesToUnit = (bytes: number): Unit => (bytes >= GB ? "GB" : bytes >= MB ? "MB" : bytes >= KB ? "KB" : "B");
+export const bytesToUnit = (bytes: number): Unit =>
+  bytes >= GB ? "GB" : bytes >= MB ? "MB" : bytes >= KB ? "KB" : "B";
 
 export const bytesToSize = (bytes: number, unit: Unit) => bytes / sizes[unit];
 
-export const calcSize = (files: Pick<File, "size">[]) => files.reduce((acc, file) => acc + file.size, 0);
+export const calcSize = (files: Pick<File, "size">[]) =>
+  files.reduce((acc, file) => acc + file.size, 0);
+
+export const clamp = (value: number, min: number, max: number) =>
+  Math.min(Math.max(value, min), max);
 
 export function download(url: string, name: string) {
   const link = document.createElement("a");
@@ -18,7 +23,7 @@ export function download(url: string, name: string) {
 
 export function formatFileSize(bytes: number) {
   const unit = bytesToUnit(bytes);
-  return `${bytes && bytesToSize(bytes, unit).toFixed(2)} ${unit}`;
+  return `${bytesToSize(bytes, unit).toFixed(2)} ${unit}`;
 }
 
 export const generateId = () => crypto.randomUUID();
@@ -30,6 +35,17 @@ export function hasExtension(file: File, extensions: string[]) {
   return dot !== -1 && extensions.includes(file.name.slice(dot).toLowerCase());
 }
 
-export const normalize = (value: string, { min = -Infinity, max = Infinity }: Constraint, defaultValue?: number) => (value ? Math.min(Math.max(+value, min), max) : defaultValue);
+export function normalize(
+  value: string,
+  { min = -Infinity, max = Infinity }: Constraint,
+  defaultValue?: number,
+) {
+  if (!value.trim()) return defaultValue;
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return defaultValue;
+
+  return clamp(parsed, min, max);
+}
 
 export const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);

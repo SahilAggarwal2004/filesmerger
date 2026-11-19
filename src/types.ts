@@ -10,6 +10,7 @@ import {
   transformOptionDescriptions,
   rotationOptionDescriptions,
   colorDescriptions,
+  aspectRatioDescriptions,
 } from "./constants";
 
 declare global {
@@ -61,11 +62,22 @@ export type ToolsInfo = Record<Tool, ToolInfo>;
 // pages/audio.tsx
 export type AudioFormat = keyof typeof audioFormatDescriptions;
 
-export type AudioSegment = { buffer: AudioBuffer; startTime: number; volume?: number };
+export type AudioSegment = {
+  buffer: AudioBuffer;
+  startTime: number;
+  volume?: number;
+};
 
 export type AudioSelections = FileSelections<
   { range?: string; volume?: number; rate?: number },
-  { id: string; audioIndex: number; range?: string; startAt?: number; volume?: number; rate?: number }
+  {
+    id: string;
+    audioIndex: number;
+    range?: string;
+    startAt?: number;
+    volume?: number;
+    rate?: number;
+  }
 >;
 
 export type LoadedAudio = {
@@ -78,6 +90,12 @@ export type LoadedAudio = {
 };
 
 // pages/image.tsx
+export type AspectRatio = keyof typeof aspectRatioDescriptions;
+
+export type CropHandle = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
+
+export type CropRect = CanvasCoordinate & Dimensions;
+
 export type CanvasCoordinate = { x: number; y: number };
 
 export type Color = keyof typeof colorDescriptions;
@@ -86,13 +104,19 @@ export type DimensionStrategy = keyof typeof dimensionStrategyDescriptions;
 
 export type Dimensions = { width: number; height: number };
 
-export type DrawOperation = CanvasCoordinate & Dimensions & { image: ImageElement };
+export type DrawOperation = CanvasCoordinate &
+  Dimensions & { image: ImageElement };
 
 export type Grid = GridCell[][];
 
 export type GridCell = ProcessedImage | null;
 
-export type GridGroup = { items: ProcessedImage[]; sharedSize: number; secondarySizes: number[]; totalSecondary: number };
+export type GridGroup = {
+  items: ProcessedImage[];
+  sharedSize: number;
+  secondarySizes: number[];
+  totalSecondary: number;
+};
 
 export type GridMergeOptions = {
   processedImages: ProcessedImage[];
@@ -135,7 +159,14 @@ export type ProcessedImage = Dimensions & { element: ImageElement };
 export type Transform =
   | { type: "resize"; scaleFactor?: number }
   | { type: "stretch"; targetWidth?: number; targetHeight?: number }
-  | { type: "crop"; cropX?: number; cropY?: number; cropWidth?: number; cropHeight?: number; fillColor?: string };
+  | {
+      type: "crop";
+      cropX?: number;
+      cropY?: number;
+      cropWidth?: number;
+      cropHeight?: number;
+      fillColor?: string;
+    };
 
 export type TransformOption = keyof typeof transformOptionDescriptions;
 
@@ -144,7 +175,10 @@ export type Unit = keyof typeof sizes;
 // pages/pdf.tsx
 export type PDFFile = { id: string; file: File };
 
-export type PDFSelections = FileSelections<{ range?: string; rotation?: number }, { id: string; pdfIndex: number; range?: string; rotation?: number }>;
+export type PDFSelections = FileSelections<
+  { range?: string; rotation?: number },
+  { id: string; pdfIndex: number; range?: string; rotation?: number }
+>;
 
 export type RotationOption = keyof typeof rotationOptionDescriptions;
 

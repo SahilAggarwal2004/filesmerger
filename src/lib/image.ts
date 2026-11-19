@@ -1,6 +1,6 @@
-import { toolsInfo } from "@/constants";
-import { generateId, hasExtension, sum } from "@/lib/utils";
-import type { Dimensions, DrawOperation, Grid, GridGroup, GridMergeOptions, ImageElement, ImageSelections, LoadedImage, ProcessedImage, Transform } from "@/types";
+import { minImageDimension, toolsInfo } from "@/constants";
+import { clamp, generateId, hasExtension, sum } from "@/lib/utils";
+import type { AspectRatio, CropHandle, CropRect, Dimensions, DrawOperation, Grid, GridGroup, GridMergeOptions, ImageElement, ImageSelections, LoadedImage, ProcessedImage, Transform } from "@/types";
 
 const createGrid = (rows: number, cols: number): Grid => Array.from({ length: rows }, () => Array(cols).fill(null));
 
@@ -20,7 +20,110 @@ export function getDimensionsAfterTransform(width: number, height: number, trans
       height = transform.cropHeight ?? height - (transform.cropY ?? 0);
       break;
   }
-  return { width: Math.max(1, width), height: Math.max(1, height) };
+  return { width: Math.max(minImageDimension, width), height: Math.max(minImageDimension, height) };
+}
+
+/** Numeric width/height ratio of an aspect ratio option, or undefined when free. */
+export function getAspectRatioValue(aspectRatio: AspectRatio, { width, height }: Dimensions) {
+  if (aspectRatio === "free") return undefined;
+  if (aspectRatio === "original") return width / height;
+  const [w, h] = aspectRatio.split(":").map(Number);
+  return w! / h!;
+}
+
+/** Builds the starting crop rectangle for the visual editor from an existing crop step (or the full image), clamped inside the image bounds. */
+export function getInitialCropRect(transform: Extract<Transform, { type: "crop" }> | undefined, width: number, height: number): CropRect {
+  const full = { x: 0, y: 0, width, height };
+  if (!transform) return full;
+
+  const x = clamp(transform.cropX ?? 0, 0, width - minImageDimension);
+  const y = clamp(transform.cropY ?? 0, 0, height - minImageDimension);
+  const rectWidth = clamp(transform.cropWidth ?? width - x, minImageDimension, width - x);
+  const rectHeight = clamp(transform.cropHeight ?? height - y, minImageDimension, height - y);
+  return { x, y, width: rectWidth, height: rectHeight };
+}
+
+export function moveCropRect(start: CropRect, dx: number, dy: number, bounds: Dimensions): CropRect {
+  return {
+    ...start,
+    x: clamp(start.x + dx, 0, bounds.width - start.width),
+    y: clamp(start.y + dy, 0, bounds.height - start.height),
+  };
+}
+
+/** Shrinks (never grows) a rectangle around its center so that it matches the aspect ratio. */
+export function fitCropRectToRatio(rect: CropRect, ratio: number): CropRect {
+  const width = Math.min(rect.width, rect.height * ratio);
+  const height = width / ratio;
+  return { x: rect.x + (rect.width - width) / 2, y: rect.y + (rect.height - height) / 2, width, height };
+}
+
+/** Resizes a rectangle by dragging one of its handles to (px, py), staying inside the bounds and optionally keeping an aspect ratio. */
+export function resizeCropRect(start: CropRect, handle: CropHandle, px: number, py: number, bounds: Dimensions, ratio?: number): CropRect {
+  const { width: maxW, height: maxH } = bounds;
+  const left = handle.includes("w");
+  const right = handle.includes("e");
+  const top = handle.includes("n");
+  const bottom = handle.includes("s");
+  const endX = start.x + start.width;
+  const endY = start.y + start.height;
+  const pointerX = clamp(px, 0, maxW);
+  const pointerY = clamp(py, 0, maxH);
+
+  let { x, y, width, height } = start;
+  if (left) {
+    x = Math.min(pointerX, endX - minImageDimension);
+    width = endX - x;
+  }
+  if (right) width = Math.max(pointerX - start.x, minImageDimension);
+  if (top) {
+    y = Math.min(pointerY, endY - minImageDimension);
+    height = endY - y;
+  }
+  if (bottom) height = Math.max(pointerY - start.y, minImageDimension);
+
+  if (!ratio) return { x, y, width, height };
+
+  const minWidth = Math.max(minImageDimension, minImageDimension * ratio);
+
+  if ((left || right) && (top || bottom)) {
+    // Corner: the opposite corner stays fixed.
+    const anchorX = left ? endX : start.x;
+    const anchorY = top ? endY : start.y;
+    const availableWidth = left ? anchorX : maxW - anchorX;
+    const availableHeight = top ? anchorY : maxH - anchorY;
+    const newWidth = Math.max(Math.min(Math.max(width, height * ratio), availableWidth, availableHeight * ratio), Math.min(minWidth, availableWidth));
+    const newHeight = newWidth / ratio;
+    return { x: left ? anchorX - newWidth : anchorX, y: top ? anchorY - newHeight : anchorY, width: newWidth, height: newHeight };
+  }
+
+  if (left || right) {
+    // Horizontal edge: the opposite edge stays fixed, height follows width around the vertical center.
+    const centerY = start.y + start.height / 2;
+    const limit = Math.min(left ? endX : maxW - start.x, 2 * Math.min(centerY, maxH - centerY) * ratio);
+    const newWidth = Math.min(Math.max(width, minWidth), limit);
+    const newHeight = newWidth / ratio;
+    return { x: left ? endX - newWidth : start.x, y: centerY - newHeight / 2, width: newWidth, height: newHeight };
+  }
+
+  // Vertical edge: the opposite edge stays fixed, width follows height around the horizontal center.
+  const centerX = start.x + start.width / 2;
+  const limit = Math.min(top ? endY : maxH - start.y, (2 * Math.min(centerX, maxW - centerX)) / ratio);
+  const newHeight = Math.min(Math.max(height, minWidth / ratio), limit);
+  const newWidth = newHeight * ratio;
+  return { x: centerX - newWidth / 2, y: top ? endY - newHeight : start.y, width: newWidth, height: newHeight };
+}
+
+/** Rounds a rectangle to whole pixels while keeping it inside the bounds. */
+export function roundCropRect(rect: CropRect, bounds: Dimensions): CropRect {
+  const x = clamp(Math.round(rect.x), 0, bounds.width - minImageDimension);
+  const y = clamp(Math.round(rect.y), 0, bounds.height - minImageDimension);
+  return {
+    x,
+    y,
+    width: clamp(Math.round(rect.width), minImageDimension, bounds.width - x),
+    height: clamp(Math.round(rect.height), minImageDimension, bounds.height - y),
+  };
 }
 
 export const isVerticalRotation = (rotation: number) => rotation === 90 || rotation === 270;
@@ -214,8 +317,8 @@ export async function mergeToCanvas(options: GridMergeOptions) {
   }
 
   const finalCanvas = document.createElement("canvas");
-  finalCanvas.width = Math.max(1, Math.round(canvasWidth));
-  finalCanvas.height = Math.max(1, Math.round(canvasHeight));
+  finalCanvas.width = Math.max(minImageDimension, Math.round(canvasWidth));
+  finalCanvas.height = Math.max(minImageDimension, Math.round(canvasHeight));
   const ctx = finalCanvas.getContext("2d");
   if (!ctx) throw new Error("Unable to create canvas context.");
 
